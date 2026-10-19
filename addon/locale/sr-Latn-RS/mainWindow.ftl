@@ -1,7 +1,7 @@
 itemPaneSection-header =
-    .label = Prevod
+    .label = Zotero Translation Reader
 itemPaneSection-sidenav =
-    .tooltiptext = Prevod
+    .tooltiptext = Zotero Translation Reader
 itemPaneSection-fullHeight =
     .tooltiptext = Puna visina
 itemPaneSection-openStandalone =

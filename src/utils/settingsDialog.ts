@@ -10,6 +10,7 @@ import { getString } from "./locale";
 import { SettingsDialogHelper } from "zotero-plugin-toolkit";
 import { FluentMessageId } from "../../typings/i10n";
 import { TranslateService } from "../modules/services/base";
+import { mountDynamicSelect } from "./dynamicSelect";
 
 export type ConfigField =
   | InputField
@@ -107,11 +108,14 @@ export type AllowedSettingsMethods = Pick<
   | "addTextSetting"
   | "addNumberSetting"
   | "addSelectSetting"
+  | "addDynamicSelectSetting"
   | "addTextAreaSetting"
   | "addCustomParamsSetting"
   | "addButton"
   | "addSetting"
   | "addStaticRow"
+  | "setWidth"
+  | "onOpen"
   | "onSave"
 >;
 
@@ -119,6 +123,49 @@ export class ServiceSettingsDialog extends SettingsDialogHelper {
   constructor() {
     super();
     this.setSettingHandlers(getPref, setPref);
+  }
+
+  setWidth(width: number): AllowedSettingsMethods {
+    const available = Zotero.getMainWindow().screen.availWidth - 40;
+    this.elementProps.styles = {
+      ...this.elementProps.styles,
+      width: `${Math.min(width, available)}px`,
+      boxSizing: "border-box",
+    };
+    this.elementProps.classList = [
+      ...(this.elementProps.classList || []),
+      "bounded-service-settings",
+    ];
+    this.elementProps.children!.splice(
+      this.elementProps.children!.length - 1,
+      0,
+      {
+        tag: "style",
+        namespace: "html",
+        properties: {
+          textContent: `
+          .bounded-service-settings .settings-grid {
+            min-width: 0;
+            grid-template-columns: max-content minmax(0, 1fr);
+          }
+          .bounded-service-settings .settings-grid > * {
+            min-width: 0 !important;
+            max-width: 100%;
+            white-space: normal;
+            overflow-wrap: anywhere;
+          }
+          .bounded-service-settings > hbox {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+            min-width: 0;
+          }
+        `,
+        },
+      },
+    );
+    return this;
   }
 
   addTextSetting(field: InputFieldText): AllowedSettingsMethods {
@@ -186,7 +233,7 @@ export class ServiceSettingsDialog extends SettingsDialogHelper {
       children: field.options.map(({ label, value }) => ({
         tag: "option",
         properties: {
-          innerHTML: label,
+          textContent: label,
           value,
         },
       })),
@@ -195,6 +242,21 @@ export class ServiceSettingsDialog extends SettingsDialogHelper {
         // auto resize to window width
         width: "-moz-available",
       },
+    });
+  }
+
+  addDynamicSelectSetting(field: SelectField): AllowedSettingsMethods {
+    // A hidden input avoids the toolkit's pre-open, static select substitution.
+    // The live picker mounts after settings values have been loaded.
+    this.addSetting(getString(field.nameKey), field.prefKey, {
+      tag: "input",
+      attributes: { type: "hidden" },
+    });
+    return this.onOpen((window) => {
+      const input = window.document.querySelector<HTMLInputElement>(
+        `input[data-setting-key="${field.prefKey}"]`,
+      )!;
+      mountDynamicSelect(input, field.options);
     });
   }
 
@@ -222,6 +284,15 @@ export class ServiceSettingsDialog extends SettingsDialogHelper {
 
   validater?: Validater;
   onSaveCallback?: () => void;
+  onOpen(callback: (window: Window) => void): AllowedSettingsMethods {
+    const previous = this.dialogData.loadCallback;
+    this.dialogData.loadCallback = () => {
+      previous?.();
+      callback(this.window!);
+    };
+    return this;
+  }
+
   onSave(validate?: Validater) {
     this.validater = validate;
     return this;
@@ -250,9 +321,20 @@ export async function createServiceSettingsDialog(
   const serviceName = service.name || getString(`service-${id}`);
   dialog
     .addButton(getString(`service-dialog-close`), "close")
-    .addAutoSaveButton(getString(`service-dialog-save`), "save", {
-      // https://github.com/windingwind/zotero-plugin-toolkit/issues/87
-      validate: dialog.validater,
+    .addButton(getString(`service-dialog-save`), "save", {
+      noClose: true,
+      callback: async () => {
+        const result = await dialog.validater?.(dialog.getAllSettingsData());
+        if (!dialog.window || dialog.window.closed) return;
+        if (result !== undefined && result !== true) {
+          Zotero.alert(dialog.window, serviceName, result);
+          return;
+        }
+        // Save only after successful validation. The toolkit's auto-save
+        // button also saves on unload after a rejected Save, even on cancel.
+        dialog.saveAllSettings();
+        dialog.window?.close();
+      },
     })
 
     .open(

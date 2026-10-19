@@ -2,12 +2,17 @@ import { config } from "../../package.json";
 import { SVGIcon } from "../utils/config";
 import { addTranslateAnnotationTask } from "../utils/task";
 import { getString } from "../utils/locale";
+import { matchPDFSelection } from "./pageReader";
 
 export function registerReaderInitializer() {
   Zotero.Reader.registerEventListener(
     "renderTextSelectionPopup",
     (event) => {
       const { reader, doc, params, append } = event;
+      if (reader.type === "pdf") {
+        matchPDFSelection(reader, params.annotation.position);
+        return;
+      }
       addon.data.translate.selectedText = params.annotation.text.trim();
       addon.hooks.onReaderPopupShow(event);
     },

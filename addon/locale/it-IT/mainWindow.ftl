@@ -1,7 +1,7 @@
 itemPaneSection-header =
-    .label = Translate
+    .label = Zotero Translation Reader
 itemPaneSection-sidenav =
-    .tooltiptext = Translate
+    .tooltiptext = Zotero Translation Reader
 itemPaneSection-fullHeight =
     .tooltiptext = Full height
 itemPaneSection-openStandalone =

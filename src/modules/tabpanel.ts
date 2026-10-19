@@ -5,6 +5,7 @@ import { getLastTranslateTask } from "../utils/task";
 import { TranslatorPanel } from "../elements/panel";
 import { isWindowAlive } from "../utils/window";
 import { services } from "./services";
+import { elementPrefix } from "../utils/elementIdentity";
 
 let paneKey = "";
 
@@ -22,12 +23,12 @@ export function registerReaderTabPanel() {
       // @ts-ignore
       orderable: false,
     },
-    bodyXHTML: "<translator-plugin-panel />",
+    bodyXHTML: `<${elementPrefix}-panel />`,
     onInit,
     onDestroy,
     onRender: ({ body, item }) => {
       const panel = body.querySelector(
-        "translator-plugin-panel",
+        `${elementPrefix}-panel`,
       ) as TranslatorPanel;
       panel.item = item;
       panel.render();
@@ -260,7 +261,7 @@ function onItemChange({
 function updateExtraPanel(container: HTMLElement | Document) {
   const lastTask = getLastTranslateTask();
   const panel = container.querySelector(
-    "translator-plugin-panel",
+    `${elementPrefix}-panel`,
   ) as TranslatorPanel;
   if (panel) {
     panel.item = Zotero.Items.get(lastTask?.itemId || -1);
