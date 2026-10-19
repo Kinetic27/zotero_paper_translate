@@ -4,9 +4,9 @@ import { getString } from "../../utils/locale";
 export async function renameServicesDialog() {
   const dialog = new ztoolkit.Dialog(4, 1);
   const dialogData: { [key: string | number]: any } = {
-    customgpt1: getPref("renameServices.customgpt1"),
-    customgpt2: getPref("renameServices.customgpt2"),
-    customgpt3: getPref("renameServices.customgpt3"),
+    chatgpt: getPref("renameServices.chatgpt") || "",
+    claude: getPref("renameServices.claude") || "",
+    gemini: getPref("renameServices.gemini") || "",
   };
   dialog
     .setDialogData(dialogData)
@@ -39,17 +39,17 @@ export async function renameServicesDialog() {
             tag: "label",
             namespace: "html",
             attributes: {
-              for: "customgpt1",
+              for: "chatgpt",
             },
             properties: {
-              innerHTML: getString("service-customgpt1"),
+              innerHTML: getString("service-chatgpt"),
             },
           },
           {
             tag: "input",
-            id: "customgpt1",
+            id: "chatgpt",
             attributes: {
-              "data-bind": "customgpt1",
+              "data-bind": "chatgpt",
               "data-prop": "value",
               type: "string",
               placeholder: "Maximum 15 characters",
@@ -60,17 +60,17 @@ export async function renameServicesDialog() {
             tag: "label",
             namespace: "html",
             attributes: {
-              for: "customgpt2",
+              for: "claude",
             },
             properties: {
-              innerHTML: getString("service-customgpt2"),
+              innerHTML: getString("service-claude"),
             },
           },
           {
             tag: "input",
-            id: "customgpt2",
+            id: "claude",
             attributes: {
-              "data-bind": "customgpt2",
+              "data-bind": "claude",
               "data-prop": "value",
               type: "string",
               placeholder: "Maximum 15 characters",
@@ -81,17 +81,17 @@ export async function renameServicesDialog() {
             tag: "label",
             namespace: "html",
             attributes: {
-              for: "customgpt3",
+              for: "gemini",
             },
             properties: {
-              innerHTML: getString("service-customgpt3"),
+              innerHTML: getString("service-gemini"),
             },
           },
           {
             tag: "input",
-            id: "customgpt3",
+            id: "gemini",
             attributes: {
-              "data-bind": "customgpt3",
+              "data-bind": "gemini",
               "data-prop": "value",
               type: "string",
               placeholder: "Maximum 15 characters",
@@ -121,9 +121,9 @@ export async function renameServicesDialog() {
   switch (dialogData._lastButtonId) {
     case "save":
       {
-        setPref("renameServices.customgpt1", dialogData.customgpt1);
-        setPref("renameServices.customgpt2", dialogData.customgpt2);
-        setPref("renameServices.customgpt3", dialogData.customgpt3);
+        setPref("renameServices.chatgpt", dialogData.chatgpt);
+        setPref("renameServices.claude", dialogData.claude);
+        setPref("renameServices.gemini", dialogData.gemini);
       }
       break;
     default:

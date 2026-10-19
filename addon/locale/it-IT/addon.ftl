@@ -1,41 +1,27 @@
-service-huoshanweb=Volcengine Web
-service-tencenttransmart=Tencent Transmart
-service-huoshan=Huoshan
-service-googleapi=Google(API)
 service-google=Google
-service-cnki=CNKI
-service-youdao=Youdao
-service-youdaozhiyun=Youdao Zhiyun
-service-youdaozhiyunllm=Youdao LLM
-service-niutranspro=Niu Trans
-service-microsoft=Microsoft
-service-caiyun=Caiyun
-service-libretranslate=LibreTranslate
-service-mtranserver=MTranServer
-service-deeplfree=DeepL(Free Plan)
-service-deeplpro=DeepL(Pro Plan)
-service-deeplcustom=DeepLX(API)
-service-deeplx=DeepLx
-service-baidu=Baidu
-service-baidufield=Baidu Field
-service-openl=OpenL
-service-tencent=Tencent
-service-aliyun=Aliyun
-service-xftrans=Xftrans
-service-chatgpt=ChatGPT
-service-customgpt1=Custom GPT 1
-service-customgpt2=Custom GPT 2
-service-customgpt3=Custom GPT 3
-service-azuregpt=AzureGPT
-service-gemini=Gemini
-service-qwenmt=Qwen-MT
-service-claude=Claude
-service-haici=Haici
-service-iciba=iCIBA
+service-googleapi=Google(API)
 service-bing=Bing
-service-pot=Pot
-service-nllb=NLLB
-service-mymemory=MyMemory
+service-deeplx=DeepLX
+service-chatgpt=ChatGPT
+service-claude=Claude
+service-gemini=Gemini
+service-codex=OpenAI Auth
+service-codex-model=Modello
+service-codex-effort=Sforzo di ragionamento
+service-codex-automatic=Automatico: primo modello disponibile
+service-codex-default-effort=Predefinito: impostazione del modello
+service-codex-loading=Caricamento dei modelli dell'account…
+service-codex-signin-required=Accedi per caricare i tuoi modelli.
+service-codex-signing-in=Completa l'accesso nel browser.
+service-codex-unavailable=Non disponibile: { $value }
+service-codex-selection-invalid=Verifica account e modelli, poi seleziona un modello disponibile e uno sforzo di ragionamento supportato prima di salvare
+service-codex-loaded={ $count } modelli disponibili
+service-codex-login=Accedi con ChatGPT
+service-codex-status=Verifica account e modelli
+service-codex-cancel-login=Annulla accesso
+service-codex-logout=Esci
+service-codex-hint=Scegli un modello e uno sforzo di ragionamento, poi Salva.
+
 service-bingdict=Bing Dict(en→zh)🔊
 service-cambridgedict=Cambridge Dict(en→other)🔊
 service-haicidict=Haici Dict(en→zh)🔊
@@ -51,37 +37,29 @@ service-errorPrefix=[Errore nella richiesta]
     
     Il messaggio seguente non è di Zotero o dell'estensione Translate ma proviene da
 
-service-niutranspro-error-insufficient-balance=
-    Il saldo punti NiuTrans non è sufficiente per completare la richiesta di traduzione.
-    Acquista punti nel centro ricariche NiuTrans e riprova.
-
-    Centro ricariche NiuTrans: https://niutrans.com/price
-
-    Codice errore: { $code } { $message }
-
 service-dialog-config=Config
 service-dialog-title={ $service } Config
 service-dialog-save=Save
 service-dialog-close=Close
 service-dialog-help=Help
-service-dialog-custom-request-description=Refer to API documentation of service provider, add custom parameters. These will be merged with the standard parameters (model, messages, temperature, stream).
-service-dialog-custom-request-title=Custom Request Parameters
-service-dialog-custom-request-add-param=Add Parameter
+service-dialog-custom-request-description=Consulta la documentazione API del provider e aggiungi parametri personalizzati. Verranno uniti ai parametri standard (model, messages, temperature, stream).
+service-dialog-custom-request-title=Parametri di richiesta personalizzati
+service-dialog-custom-request-add-param=Aggiungi parametro
 service-dialog-custom-request-parameter-name=Nome parametro
 service-dialog-custom-request-parameter-value=Valore parametro
 service-dialog-custom-request-parameter-name-placeholder=Nome parametro
 service-dialog-custom-request-parameter-value-placeholder=Valore parametro (formato JSON)
-service-dialog-custom-request-validation-title=Can't Save Custom Parameters
-service-dialog-custom-request-validation-summary=Some parameter values are not valid JSON. Please fix them and try again.
-service-dialog-custom-request-validation-errors-head=Please check:
-service-dialog-custom-request-validation-error-invalid=- { $key }: invalid format ({ $detail })
-service-dialog-custom-request-validation-error-empty=- { $key }: value is empty
-service-dialog-custom-request-validation-error-duplicate=- { $key }: duplicate parameter name
-service-dialog-custom-request-validation-examples-head=Examples for the value field:
-service-dialog-custom-request-validation-example-boolean=- Boolean: false
-service-dialog-custom-request-validation-example-number=- Number: 123
-service-dialog-custom-request-validation-example-string=- Text: "text"
-service-dialog-custom-request-validation-example-object=- Object: { $example }
+service-dialog-custom-request-validation-title=Impossibile salvare i parametri personalizzati
+service-dialog-custom-request-validation-summary=Alcuni valori dei parametri non sono JSON validi. Correggili e riprova.
+service-dialog-custom-request-validation-errors-head=Controlla quanto segue:
+service-dialog-custom-request-validation-error-invalid=- { $key }: formato non valido ({ $detail })
+service-dialog-custom-request-validation-error-empty=- { $key }: valore vuoto
+service-dialog-custom-request-validation-error-duplicate=- { $key }: nome parametro duplicato
+service-dialog-custom-request-validation-examples-head=Esempi per il campo valore:
+service-dialog-custom-request-validation-example-boolean=- Booleano: false
+service-dialog-custom-request-validation-example-number=- Numero: 123
+service-dialog-custom-request-validation-example-string=- Testo: "text"
+service-dialog-custom-request-validation-example-object=- Oggetto: { $example }
 service-dialog-api-format-openai=OpenAI (chat/completions)
 service-dialog-api-format-anthropic=Anthropic (messages)
 service-gpt-dialog-thinkingLevel-hint=Il formato del parametro di ragionamento viene rilevato automaticamente dall'endpoint (OpenAI/Azure, OpenRouter, GLM, DeepSeek, Kimi, Doubao, Qwen). Per endpoint non riconosciuti (es. relay) non viene inviato alcun parametro: usa Custom Request per impostarlo manualmente.
@@ -91,90 +69,38 @@ service-dialog-thinking-low=Basso
 service-dialog-thinking-medium=Medio
 service-dialog-thinking-high=Alto
 
-service-niutranspro-dialog-endpoint=Endpoint
-service-niutranspro-dialog-username=Nome utente
-service-niutranspro-dialog-password=Password
-service-niutranspro-dialog-signup=Registrati
-service-niutranspro-dialog-forget=Dimentica
-service-niutranspro-dialog-dictLib=Lib. Diz.
-service-niutranspro-dialog-memoryLib=Lib. Mem.
-service-niutranspro-dialog-tip0=Si prega di collegarsi a
-service-niutranspro-dialog-tip1=Niutrans Cloud Platform
-service-niutranspro-dialog-tip2=per aggiungere il vocabolo alla libreria dei dizionari
-service-niutranspro-dialog-signin=Autenticati
-service-niutranspro-dialog-refresh=Aggiorna
-service-niutranspro-dialog-signout=Esci
+service-deeplx-dialog-endPoint=Endpoint API
 
-service-deeplcustom-dialog-endPoint=EndPoint
-service-deeplx-dialog-endPoint=API
-
-service-chatgpt-dialog-endPoint=API
-service-chatgpt-dialog-model=Modello
+service-chatgpt-dialog-endPoint=URL di base API
+service-chatgpt-dialog-model=ID modello
 service-chatgpt-dialog-temperature=Temperatura
 service-chatgpt-dialog-apiFormat=Formato API
 service-chatgpt-dialog-prompt=Prompt
 service-gpt-dialog-prompt-hint=Variabili disponibili: { $variables }. { $required } è obbligatorio.
 service-gpt-dialog-prompt-required=Aggiungi { $placeholder } per inviare il testo selezionato al servizio di traduzione.
-service-gpt-dialog-apiFormat-hint=L'endpoint accetta l'URL di base della documentazione del provider: https://api.deepseek.com diventa https://api.deepseek.com/v1/chat/completions (formato Anthropic: https://api.anthropic.com/v1/messages). Un URL già completo, ad es. https://api.openai.com/v1/chat/completions o https://api.openai.com/v1/responses, viene usato così com'è. Nel formato Anthropic la chiave viene inviata come x-api-key.
+service-gpt-dialog-apiFormat-hint=Questo unico servizio ChatGPT accetta endpoint compatibili OpenAI (chat/completions) e compatibili Anthropic (messages). Scegli il formato indicato dalla documentazione del provider, poi inserisci il suo URL di base API, ad esempio https://api.deepseek.com o https://api.openai.com/v1; un URL di risorsa completo viene usato così com'è. Il campo modello richiede l'ID modello del provider. Inserisci la chiave API separatamente nel campo Segreto del servizio selezionato. Viene inviata così com'è nell'header previsto dal formato scelto, quindi non serve una sintassi di chiave specifica del fornitore.
 service-chatgpt-dialog-stream=Stream
 service-chatgpt-dialog-thinkingLevel=Ragionamento
 service-chatgpt-dialog-custom-request=Custom Request
 
-service-azuregpt-dialog-endPoint=EndPoint
-service-azuregpt-dialog-model=Nome
-service-azuregpt-dialog-temperature=Temperatura
-service-azuregpt-dialog-apiVersion=Versione
-service-azuregpt-dialog-prompt=Prompt
-service-azuregpt-dialog-stream=Stream
-service-azuregpt-dialog-thinkingLevel=Ragionamento
-service-azuregpt-dialog-custom-request=Custom Request
-
-service-xftrans-dialog-engine=API Engine
-
-service-gemini-dialog-endPoint=EndPoint
+service-gemini-dialog-endPoint=URL di base API (senza /models/model)
+service-gemini-dialog-model=ID modello
 service-gemini-dialog-prompt=Prompt
 service-gemini-dialog-stream=Stream
 service-gemini-dialog-thinkingLevel=Ragionamento
 
-service-qwenmt-dialog-endPoint=EndPoint
-service-qwenmt-dialog-model=Model
-service-qwenmt-dialog-domains=Domains
-
-service-claude-dialog-endPoint=EndPoint
-service-claude-dialog-model=Model
-service-claude-dialog-temperature=Temp
+service-claude-dialog-endPoint=URL di base API
+service-claude-dialog-model=ID modello
+service-claude-dialog-temperature=Temperatura
 service-claude-dialog-prompt=Prompt
 service-claude-dialog-stream=Stream
 service-claude-dialog-thinkingLevel=Ragionamento
 service-claude-dialog-maxTokens=Max Tokens
 
-service-cnki-settings=Impostazioni
-service-cnki-dialog-regex=Regex per gli annunci CNKI
-service-cnki-dialog-split=Dividi automaticamente la traduzione per più di 800 caratteri
-
-service-mymemory-dialog-userEmail=Free upgrade: enter email for 5K chars/day per IP
-
-service-aliyun-dialog-action=Azione
-service-aliyun-dialog-scene=Scena
-
-service-tencent-dialog-secretid=Segreto ID
-service-tencent-dialog-secretkey=Segreto Key
-service-tencent-dialog-region=Regione
-service-tencent-dialog-projectid=Progetto ID
-service-tencent-dialog-termrepoid=Term Repo IDs (opzionale)
-service-tencent-dialog-sentrepoid=Sent Repo IDs (opzionale)
-
-service-youdaozhiyun-dialog-domain=Settore
-service-youdaozhiyunllm-dialog-model=Modello
-service-youdaozhiyunllm-dialog-pro=Youdao LLM Pro-14B
-service-youdaozhiyunllm-dialog-lite=Youdao LLM Lite-1.5B
-service-youdaozhiyunllm-dialog-prompt=Prompt
-service-youdaozhiyunllm-dialog-stream=Stream
-
 readerpopup-translate-label=Traduci
 readerpopup-addToNote-label=Aggiungi traduzione alla nota
 
-pref-title=Translate
+pref-title=Zotero Translation Reader
 
 field-titleTranslation=Traduzione del titolo
 field-abstractTranslation=Traduzione dell'Abstract
@@ -182,27 +108,13 @@ field-abstractTranslation=Traduzione dell'Abstract
 status-translating=Traduzione in corso...
 sideBarIcon-title=Translate annotation
 
-service-manageKeys-title=Gestione delle chiavi dei segreto di traduzione
-service-manageKeys-head=Gestisci tutte le dei segreto di traduzione. Modifica direttamente il file JSON e clicca su Salva.
+service-manageKeys-title=Gestione delle chiavi dei servizi di traduzione
+service-manageKeys-head=Gestisci tutte le chiavi dei servizi di traduzione. Modifica direttamente il file JSON e clicca su Salva.
 service-manageKeys-save=Salva
 service-manageKeys-close=Chiudi
 
-service-renameServices-title=Rinominare i servizi Custom GPT
-service-renameServices-head=Inserisci il nuovo nome e clicca su Salva.
+service-renameServices-title=Rinomina i nomi dei servizi API personalizzati
+service-renameServices-head=Inserisci un nuovo nome visualizzato per i servizi API personalizzati (ChatGPT, Claude, Gemini) e clicca su Salva.
 service-renameServices-hint=Le modifiche avranno effetto dopo il riavvio del plugin o di Zotero
 service-renameServices-save=Salva
 service-renameServices-close=Chiudi
-
-service-libretranslate-dialog-endPoint=API Endpoint
-
-service-mtranserver-dialog-endPoint=EndPoint
-service-mtranserver-dialog-versionlabel=Use MTranServer v3.0.0+
-
-service-pot-dialog-port=Port
-
-service-nllb-dialog-model=nllb Modello
-service-nllb-dialog-apiendpoint=nllb-api EndPoint
-service-nllb-dialog-apistream=nllb-api Stream
-service-nllb-dialog-serveendpoint=nllb-serve EndPoint
-service-nllb-dialog-apilabel=nllb-api Docs
-service-nllb-dialog-servelabel=nllb-serve Docs

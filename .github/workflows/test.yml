@@ -1,17 +1,28 @@
-name: Test
+name: Verify
 
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/main' }}
+
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  verify:
+    name: Linux Zotero native verification
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
+    env:
+      NO_COLOR: "1"
+      ZOTERO_VERSION: "10.0.6"
+      ZOTERO_SHA256: "246c2574a9ac526abeaf3027ffd22fc45536a5ab25f227bb1df932fca9cedd63"
 
     steps:
       - name: Checkout
@@ -21,16 +32,74 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      # The test bundle is built by esbuild, which does not typecheck
-      - name: Typecheck tests
-        run: npx tsc --noEmit -p test/tsconfig.json
+      - name: Typecheck and lint product and tests
+        run: |
+          npx tsc --noEmit
+          npx tsc --noEmit -p test/tsconfig.json
+          npx eslint src test zotero-plugin.config.ts
 
-      # In CI, zotero-plugin-scaffold downloads Zotero, runs it headless
-      # under Xvfb, and exits non-zero if any test fails
-      - name: Run tests
-        run: npm test
+      - name: Install native GUI dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y xvfb xauth xfwm4 libgtk-3-0t64 libdbus-glib-1-2 libasound2t64 libnss3 libgbm1
+
+      - name: Install checksum-pinned official Zotero
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/zotero.tar.xz"
+          curl --fail --location --retry 3 --output "$archive" "https://download.zotero.org/client/release/$ZOTERO_VERSION/Zotero-${ZOTERO_VERSION}_linux-x86_64.tar.xz"
+          printf '%s  %s\n' "$ZOTERO_SHA256" "$archive" | sha256sum --check --strict
+          mkdir -p "$RUNNER_TEMP/zotero"
+          tar -xf "$archive" --strip-components=1 -C "$RUNNER_TEMP/zotero"
+          printf 'ZOTERO_PLUGIN_ZOTERO_BIN_PATH=%s/zotero/zotero\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+
+      - name: Native suite with managed display
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s xvfb-run -a bash -c '
+            xfwm4 --compositor=off &
+            wm=$!
+            trap '\''kill "$wm"'\'' EXIT
+            env -u CI -u GITHUB_ACTIONS npm test -- --no-watch
+          ' | tee "$RUNNER_TEMP/native-suite.log"
+          python3 - <<'PY'
+          import os, pathlib, re
+          log = pathlib.Path(os.environ['RUNNER_TEMP'], 'native-suite.log').read_text()
+          if not re.search(r'Test run completed - [1-9][0-9]* passed\s*$', log, re.M):
+              raise SystemExit('Missing explicit successful native completion receipt')
+          PY
+
+      - name: Actual application quit ownership
+        run: npm run test:codex-quit
+
+      - name: Saved translation across separate Zotero processes
+        run: npm run test:reader-restart
+
+      - name: Production build and release contracts
+        run: |
+          npm run build
+          npm run verify:release
+
+      - name: Upload verification evidence and candidate package
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/native-suite.log
+            /tmp/codex-quit-*/result.json
+            /tmp/reader-restart-*/result.json
+            /tmp/reader-restart-*/failure-*.json
+            /tmp/reader-restart-*/native-*.log
+            build/*.xpi
+            build/update*.json
+            build/SHA256SUMS.txt

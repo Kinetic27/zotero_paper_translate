@@ -1,7 +1,7 @@
 itemPaneSection-header =
-    .label = 翻译
+    .label = Zotero Translation Reader
 itemPaneSection-sidenav =
-    .tooltiptext = 翻译
+    .tooltiptext = Zotero Translation Reader
 itemPaneSection-fullHeight =
     .tooltiptext = 自适应高度
 itemPaneSection-openStandalone =

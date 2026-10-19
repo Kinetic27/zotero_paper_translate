@@ -1,20 +1,70 @@
 name: Release
 
+# Publish Zotero Translation Reader from a version tag (v<package version>).
+# Manual runs are allowed only when the selected ref is a version tag; a branch
+# run fails in preflight instead of publishing from an untagged commit.
 on:
   push:
     tags:
-      - v**
+      - "v*"
+  workflow_dispatch:
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+  contents: read
+
+# Serialize releases and never cancel a run that may be uploading assets.
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  preflight:
+    name: Require a version tag
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: Reject non-tag runs
+        shell: bash
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ "$REF_TYPE" != "tag" ]; then
+            echo "::error::Releases must run on a version tag, not a $REF_TYPE. Push a v<package version> tag."
+            exit 1
+          fi
+          case "$REF_NAME" in
+            v[0-9]*) ;;
+            *)
+              echo "::error::Release tag must look like v<package version>; got $REF_NAME."
+              exit 1
+              ;;
+          esac
+
+  verify:
+    name: Verify release candidate
+    needs: preflight
+    uses: ./.github/workflows/test.yml
+    permissions:
+      contents: read
+
+  publish:
+    name: Publish GitHub release
+    needs: [preflight, verify]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+
     env:
-      GITHUB_TOKEN: ${{ secrets.GitHub_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      REF_NAME: ${{ github.ref_name }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,30 +74,127 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "22"
+          cache: npm
 
-      - name: Install deps
-        run: npm install -f
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Build
+      - name: Build production package
+        run: npm run build
+
+      - name: Verify release package and tag
+        run: python3 scripts/verify_release.py --tag "$REF_NAME"
+
+      - name: Publish version release
+        timeout-minutes: 10
+        shell: bash
         run: |
-          npm run build
+          set -euo pipefail
 
-      - name: Release to GitHub
+          tag="$REF_NAME"
+          version="$(python3 -c 'import json; print(json.load(open("package.json"))["version"])')"
+          if [ "v$version" != "$tag" ]; then
+            echo "::error::Tag $tag does not match package version v$version."
+            exit 1
+          fi
+
+          case "$version" in
+            *-*) prerelease=true ;;
+            *) prerelease=false ;;
+          esac
+          printf 'RELEASE_VERSION=%s\nRELEASE_PRERELEASE=%s\n' "$version" "$prerelease" >> "$GITHUB_ENV"
+
+          xpi="build/zotero-translation-reader.xpi"
+          sums="build/SHA256SUMS.txt"
+          for asset in "$xpi" "$sums"; do
+            if [ ! -s "$asset" ]; then
+              echo "::error::Missing release asset $asset."
+              exit 1
+            fi
+          done
+
+          notes="$(mktemp)"
+          title="Zotero Translation Reader v$version"
+          {
+            echo "$title"
+            echo
+            echo "- 원문 수식·그림·표를 PDF에서 렌더링해 번역문과 함께 읽습니다."
+            echo "- 성공한 페이지 번역을 로컬에 저장하고 다시 열 때 그대로 불러옵니다."
+            echo "- ChatGPT 계정은 브라우저 OAuth로 직접 연결하며 별도 CLI가 필요 없습니다."
+            echo "- Google, Google(API), Bing, DeepLX, ChatGPT, Claude, Gemini, OpenAI Auth 여덟 가지 번역 서비스를 지원합니다."
+            echo "- 읽기 도구 모음을 두 줄로 압축했고 본문 최대 너비 제한을 없애 가용 너비를 모두 사용합니다."
+            echo
+            echo '설치: Zotero → 도구 → 플러그인 → 톱니바퀴 → 파일에서 플러그인 설치에서 `zotero-translation-reader.xpi`를 선택합니다. 지원 범위는 Zotero 7.9.9–10.9.9입니다.'
+            echo
+            echo "검증 범위: Linux Zotero 10.0.6의 네이티브 GUI·저장·재시작·종료 검증은 가상 응답을 사용했습니다. 실제 번역 품질, 개인 계정 실제 번역, Windows/macOS, 일반 XPI 설치는 검증하지 않았습니다."
+            echo
+            echo '`SHA256SUMS.txt`에서 XPI 체크섬을 확인할 수 있습니다.'
+          } > "$notes"
+
+          if gh release view "$tag" --json tagName >/dev/null; then
+            # Rerun for an existing tag: refresh assets, keep the release state.
+            gh release upload "$tag" "$xpi" "$sums" --clobber
+          else
+            # Draft first: the release only becomes public after uploads finish.
+            create=(--draft --verify-tag --title "$title" --notes-file "$notes")
+            if [ "$prerelease" = true ]; then
+              create+=(--prerelease)
+            fi
+            gh release create "$tag" "$xpi" "$sums" "${create[@]}"
+          fi
+
+          publish=(--draft=false --title "$title" --notes-file "$notes")
+          if [ "$prerelease" = true ]; then
+            publish+=(--prerelease --latest=false)
+          else
+            publish+=(--prerelease=false --latest)
+          fi
+          gh release edit "$tag" "${publish[@]}"
+          echo "Published $tag with $(basename "$xpi") and $(basename "$sums")."
+
+      - name: Update rolling update feed
+        timeout-minutes: 10
+        shell: bash
         run: |
-          npm run release
-          # cp build/update.json update.json
-          # cp build/update-beta.json update-beta.json
-          # git add update.json
-          # git add update-beta.json
-          # git commit -m 'chore(publish): synchronizing `update.json`'
-          # git push
-          sleep 1s
+          set -euo pipefail
 
-      - name: Notify release
-        uses: apexskier/github-release-commenter@v1
-        continue-on-error: true
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          comment-template: |
-            :rocket: _This ticket has been resolved in {release_tag}. See {release_link} for release notes._
+          version="$RELEASE_VERSION"
+          # Stable and prerelease tags publish separate assets on the same
+          # rolling release, so a beta run can never replace the stable feed.
+          if [ "$RELEASE_PRERELEASE" = true ]; then
+            feed="update-beta.json"
+          else
+            feed="update.json"
+          fi
+          asset="build/$feed"
+          if [ ! -s "$asset" ]; then
+            echo "::error::Missing $asset for version $version."
+            exit 1
+          fi
+
+          title="Zotero Translation Reader update feed"
+          notes="$(mktemp)"
+          {
+            echo "$title"
+            echo
+            echo "Zotero 자동 업데이트용 매니페스트입니다. 직접 설치에는 사용하지 마세요."
+            echo '- stable: `update.json` (최신 정식 버전)'
+            echo '- prerelease: `update-beta.json`'
+            echo "- 최근 반영: v$version → \`$feed\`"
+          } > "$notes"
+
+          # The long-lived rolling tag `release` is reused for every feed update.
+          if gh release view release --json tagName >/dev/null; then
+            gh release upload release "$asset" --clobber
+          else
+            gh release create release "$asset" \
+              --draft --prerelease \
+              --target "$(git rev-parse HEAD)" \
+              --title "$title" --notes-file "$notes"
+          fi
+
+          gh release edit release \
+            --draft=false --prerelease --latest=false \
+            --title "$title" --notes-file "$notes"
+          echo "Uploaded $feed to the rolling release."

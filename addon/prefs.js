@@ -16,6 +16,7 @@ pref("__prefsPrefix__.sourceLanguage", "en-US");
 pref("__prefsPrefix__.targetLanguage", "");
 pref("__prefsPrefix__.fontSize", "12");
 pref("__prefsPrefix__.lineHeight", "1.5");
+pref("__prefsPrefix__.showOriginalPage", false);
 pref("__prefsPrefix__.splitChar", "\ud83d\udd24");
 pref("__prefsPrefix__.resultRegex", "");
 pref("__prefsPrefix__.rawResultOrder", false);
@@ -37,13 +38,6 @@ pref("__prefsPrefix__.keepWindowTop", false);
 pref("__prefsPrefix__.keepPopupSize", false);
 pref("__prefsPrefix__.popupWidth", 105);
 pref("__prefsPrefix__.popupHeight", 30);
-pref("__prefsPrefix__.niutransEndpoint", "https://niutrans.com/niuInterface");
-pref("__prefsPrefix__.niutransUsername", "");
-pref("__prefsPrefix__.niutransPassword", "");
-pref("__prefsPrefix__.niutransDictNo", "");
-pref("__prefsPrefix__.niutransMemoryNo", "");
-pref("__prefsPrefix__.niutransDictLibList", "[]");
-pref("__prefsPrefix__.niutransMemoryLibList", "[]");
 pref("__prefsPrefix__.autoPlay", false);
 pref("__prefsPrefix__.showPlayBtn", true);
 pref("__prefsPrefix__.enableAutoDetectLanguage", true);
@@ -63,51 +57,22 @@ pref(
 pref("__prefsPrefix__.chatGPT.stream", true);
 pref("__prefsPrefix__.chatGPT.thinkingLevel", "default");
 pref("__prefsPrefix__.chatGPT.customParams", "");
-pref("__prefsPrefix__.azureGPT.endPoint", "");
-pref("__prefsPrefix__.azureGPT.model", "");
-pref("__prefsPrefix__.azureGPT.apiVersion", "2023-05-15");
-pref("__prefsPrefix__.azureGPT.temperature", "1.0");
-pref(
-  "__prefsPrefix__.azureGPT.prompt",
-  "As an academic expert with specialized knowledge in various fields, please provide a proficient and precise translation from ${langFrom} to ${langTo} of the academic text enclosed in 🔤. It is crucial to maintaining the original phrase or sentence and ensure accuracy while utilizing the appropriate language. The text is as follows:  🔤 ${sourceText} 🔤  Please provide the translated result without any additional explanation and remove 🔤.",
-);
-pref("__prefsPrefix__.azureGPT.stream", true);
-pref("__prefsPrefix__.azureGPT.thinkingLevel", "default");
-pref("__prefsPrefix__.azureGPT.customParams", "");
+pref("__prefsPrefix__.chatGPT.apiFormat", "openai");
 pref(
   "__prefsPrefix__.gemini.endPoint",
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite",
+  "https://generativelanguage.googleapis.com/v1beta",
 );
+pref("__prefsPrefix__.gemini.model", "gemini-2.5-flash-lite");
 pref(
   "__prefsPrefix__.gemini.prompt",
   "As an academic expert with specialized knowledge in various fields, please provide a proficient and precise translation from ${langFrom} to ${langTo} of the academic text enclosed in 🔤. It is crucial to maintaining the original phrase or sentence and ensure accuracy while utilizing the appropriate language. The text is as follows:  🔤 ${sourceText} 🔤  Please provide the translated result without any additional explanation and remove 🔤.",
 );
 pref("__prefsPrefix__.gemini.stream", true);
 pref("__prefsPrefix__.gemini.thinkingLevel", "default");
-pref(
-  "__prefsPrefix__.cnkiRegex",
-  "(查看名企职位.+?https://dict.cnki.net[a-zA-Z./]+.html?)",
-);
-pref("__prefsPrefix__.cnkiSplitSecond", 1);
-pref("__prefsPrefix__.cnkiUseSplit", true);
 pref("__prefsPrefix__.deeplx.endpoint", "https://www2.deepl.com/jsonrpc");
-pref("__prefsPrefix__.deeplcustom.endpoint", "");
-pref("__prefsPrefix__.pot.port", 60828);
-pref(
-  "__prefsPrefix__.qwenmt.endPoint",
-  "https://dashscope.aliyuncs.com/compatible-mode",
-);
-pref("__prefsPrefix__.qwenmt.model", "qwen-mt-plus");
-pref("__prefsPrefix__.qwenmt.domains", "");
-pref("__prefsPrefix__.aliyun.action", "TranslateGeneral");
-pref("__prefsPrefix__.aliyun.scene", "general");
 
 pref("__prefsPrefix__.enableMathRendering", false);
 pref("__prefsPrefix__.stripEmptyLines", false);
-pref("__prefsPrefix__.libretranslate.endpoint", "http://localhost:5000");
-pref("__prefsPrefix__.mtranserver.endpoint", "http://localhost:8989/translate");
-pref("__prefsPrefix__.mtranserver.versionlabel", false);
-pref("__prefsPrefix__.mymemory.userEmail", "");
 pref("__prefsPrefix__.claude.stream", true);
 pref("__prefsPrefix__.claude.thinkingLevel", "default");
 pref(
@@ -121,46 +86,6 @@ pref(
   "As an academic expert with specialized knowledge in various fields, please provide a proficient and precise translation from ${langFrom} to ${langTo} of the academic text enclosed in 🔤. It is crucial to maintaining the original phrase or sentence and ensure accuracy while utilizing the appropriate language. The text is as follows:  🔤 ${sourceText} 🔤  Please provide the translated result without any additional explanation and remove 🔤.",
 );
 pref("__prefsPrefix__.claude.maxTokens", "4000");
-pref("__prefsPrefix__.xftrans.engine", "xftrans");
-pref("__prefsPrefix__.tencent.region", "ap-shanghai");
-pref("__prefsPrefix__.tencent.projectId", "0");
-pref("__prefsPrefix__.youdaozhiyun.domain", "general");
-pref("__prefsPrefix__.youdaozhiyunllm.model", "0");
-pref("__prefsPrefix__.youdaozhiyunllm.stream", true);
-pref("__prefsPrefix__.nllb.model", "nllb-api");
-pref("__prefsPrefix__.nllb.apiendpoint", "http://localhost:7860");
-pref("__prefsPrefix__.nllb.apistream", true);
-pref("__prefsPrefix__.nllb.serveendpoint", "http://localhost:6060");
-pref("__prefsPrefix__.customGPT1.apiFormat", "openai");
-pref("__prefsPrefix__.customGPT1.endPoint", "");
-pref("__prefsPrefix__.customGPT1.model", "");
-pref(
-  "__prefsPrefix__.customGPT1.prompt",
-  "As an academic expert with specialized knowledge in various fields, please provide a proficient and precise translation from ${langFrom} to ${langTo} of the academic text enclosed in 🔤. It is crucial to maintaining the original phrase or sentence and ensure accuracy while utilizing the appropriate language. The text is as follows:  🔤 ${sourceText} 🔤  Please provide the translated result without any additional explanation and remove 🔤.",
-);
-pref("__prefsPrefix__.customGPT1.stream", true);
-pref("__prefsPrefix__.customGPT1.customParams", "");
-pref("__prefsPrefix__.customGPT1.temperature", "1.0");
-pref("__prefsPrefix__.customGPT1.thinkingLevel", "default");
-pref("__prefsPrefix__.customGPT2.apiFormat", "openai");
-pref("__prefsPrefix__.customGPT2.endPoint", "");
-pref("__prefsPrefix__.customGPT2.model", "");
-pref(
-  "__prefsPrefix__.customGPT2.prompt",
-  "As an academic expert with specialized knowledge in various fields, please provide a proficient and precise translation from ${langFrom} to ${langTo} of the academic text enclosed in 🔤. It is crucial to maintaining the original phrase or sentence and ensure accuracy while utilizing the appropriate language. The text is as follows:  🔤 ${sourceText} 🔤  Please provide the translated result without any additional explanation and remove 🔤.",
-);
-pref("__prefsPrefix__.customGPT2.stream", true);
-pref("__prefsPrefix__.customGPT2.customParams", "");
-pref("__prefsPrefix__.customGPT2.temperature", "1.0");
-pref("__prefsPrefix__.customGPT2.thinkingLevel", "default");
-pref("__prefsPrefix__.customGPT3.apiFormat", "openai");
-pref("__prefsPrefix__.customGPT3.endPoint", "");
-pref("__prefsPrefix__.customGPT3.model", "");
-pref(
-  "__prefsPrefix__.customGPT3.prompt",
-  "As an academic expert with specialized knowledge in various fields, please provide a proficient and precise translation from ${langFrom} to ${langTo} of the academic text enclosed in 🔤. It is crucial to maintaining the original phrase or sentence and ensure accuracy while utilizing the appropriate language. The text is as follows:  🔤 ${sourceText} 🔤  Please provide the translated result without any additional explanation and remove 🔤.",
-);
-pref("__prefsPrefix__.customGPT3.stream", true);
-pref("__prefsPrefix__.customGPT3.customParams", "");
-pref("__prefsPrefix__.customGPT3.temperature", "1.0");
-pref("__prefsPrefix__.customGPT3.thinkingLevel", "default");
+pref("__prefsPrefix__.codex.model", "");
+pref("__prefsPrefix__.codex.reasoningEffort", "");
+pref("__prefsPrefix__.codex.accountRevision", "");

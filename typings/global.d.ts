@@ -41,5 +41,5 @@ declare class MozXULElement {
 }
 
 declare namespace Zotero {
-  const PDFTranslate: import("../src/addon").default;
+  const ZoteroPaperTranslate: import("../src/addon").default;
 }
