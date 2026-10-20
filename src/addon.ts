@@ -9,6 +9,8 @@ class Addon {
   public data: {
     config: typeof config;
     alive: boolean;
+    pageWork: Promise<unknown>;
+    pageBulkOwner?: string;
     // Env type, see build.js
     env: "development" | "production";
     ztoolkit: ZToolkit;
@@ -43,10 +45,21 @@ class Addon {
   // APIs
   public api: typeof api;
 
+  // The queue outlives panel windows. Never retain a promise whose methods
+  // belong to a standalone window that can be closed/nuked by Gecko.
+  public enqueuePageWork(operation: () => Promise<void>): Promise<void> {
+    const pending = this.data.pageWork.then(async () => {
+      await operation();
+    });
+    this.data.pageWork = pending.catch(() => {});
+    return pending;
+  }
+
   constructor() {
     this.data = {
       config,
       alive: true,
+      pageWork: Promise.resolve(),
       env: __env__,
       ztoolkit: createZToolkit(),
       locale: {},

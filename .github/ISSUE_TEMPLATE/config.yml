@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Documentation in Chinese (中文文档)
-    url: https://zotero.yuque.com/staff-gkhviy/pdf-trans
-    about: 如果你是中文用户，请先阅读中文文档。文档中已经说明的问题不会回复。
+  - name: Installation and usage
+    url: https://github.com/Kinetic27/zotero_paper_translate#readme
+    about: 설치 방법, 번역 서비스 설정, 개인정보 안내를 먼저 확인하세요.
