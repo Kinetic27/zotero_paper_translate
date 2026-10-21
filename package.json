@@ -1,37 +1,44 @@
 {
-  "name": "zotero-pdf-translate",
-  "version": "2.4.8",
-  "description": "Translate PDF, EPub, webpage, metadata, annotations, notes to the target language. Support 20+ translate services.",
+  "name": "zotero-translation-reader",
+  "version": "2.4.40",
+  "description": "Translate PDF papers in Zotero with original math, figures, tables, saved context, and direct ChatGPT browser login without a CLI.",
   "config": {
-    "addonName": "Translate for Zotero",
-    "addonID": "zoteropdftranslate@euclpts.com",
-    "addonRef": "zoteropdftranslate",
-    "prefsPrefix": "extensions.zotero.ZoteroPDFTranslate",
-    "addonInstance": "PDFTranslate"
+    "addonName": "Zotero Translation Reader",
+    "addonID": "zotero-paper-translate@kinetic27",
+    "addonRef": "zoteroPaperTranslate",
+    "prefsPrefix": "extensions.zotero.ZoteroPaperTranslate",
+    "addonInstance": "ZoteroPaperTranslate"
   },
   "main": "src/index.ts",
   "scripts": {
     "start": "zotero-plugin serve",
     "build": "tsc --noEmit && zotero-plugin build",
-    "release": "zotero-plugin release",
+    "verify:release": "python3 scripts/verify_release.py",
     "lint": "prettier --write . && eslint . --fix",
     "test": "zotero-plugin test",
-    "update-deps": "npm update --save"
+    "test:codex-quit": "node test/codexQuit.mjs",
+    "update-deps": "npm update --save",
+    "test:reader-restart": "node test/readerRestart.mjs"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/windingwind/zotero-pdf-translate.git"
+    "url": "git+https://github.com/Kinetic27/zotero_paper_translate.git"
   },
-  "author": "windingwind",
+  "author": "Kinetic27",
+  "contributors": [
+    {
+      "name": "windingwind",
+      "url": "https://github.com/windingwind"
+    }
+  ],
   "license": "AGPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/windingwind/zotero-pdf-translate/issues"
+    "url": "https://github.com/Kinetic27/zotero_paper_translate/issues"
   },
-  "homepage": "https://github.com/windingwind/zotero-pdf-translate#readme",
+  "homepage": "https://github.com/Kinetic27/zotero_paper_translate#readme",
   "dependencies": {
     "franc": "^6.2.0",
     "iso639-js": "^1.1.3",
-    "jsencrypt": "^3.5.0",
     "katex": "^0.16.25",
     "zotero-plugin-toolkit": "^6.0.0"
   },

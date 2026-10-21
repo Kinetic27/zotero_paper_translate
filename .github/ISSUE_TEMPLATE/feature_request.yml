@@ -3,7 +3,7 @@ description: Suggest an idea for this project
 title: "[Feature] "
 labels:
   - enhancement
-assignees: windingwind
+assignees: Kinetic27
 body:
   - type: checkboxes
     id: check-search
@@ -20,8 +20,8 @@ body:
       description: |
         examples:
           - **OS**: Windows 11 22H2
-          - **Zotero Version**: 7.0.0
-          - **Plugin Version**: 1.0.0
+          - **Zotero Version**: 10.0.6
+          - **Plugin Version**: 2.4.38
       value: |
         - OS: 
         - Zotero Version: 

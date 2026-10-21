@@ -1,4 +1,6 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-npx lint-staged
+set -e
+npx tsc --noEmit
+npx tsc --noEmit -p test/tsconfig.json
+npx eslint src test zotero-plugin.config.ts
+git diff --cached --check

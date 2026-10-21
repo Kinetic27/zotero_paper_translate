@@ -11,8 +11,6 @@ import {
 import { TranslateService } from "./base";
 import { hasSourceTextPlaceholder } from "./gptPrompt";
 
-type ID = "chatgpt" | "customgpt1" | "customgpt2" | "customgpt3" | "azuregpt";
-
 function getCustomParams(
   prefix: string,
   extraFilterKeys: string[] = [],
@@ -276,7 +274,6 @@ const gptTranslate = async function (
   const nonStreamCallback = (xmlhttp: XMLHttpRequest) => {
     // Non-streaming logic: Handle the complete response at once
     xmlhttp.onload = () => {
-      // console.debug("GPT response received");
       try {
         const responseObj = JSON.parse(xmlhttp.responseText);
         const resultContent = useResponsesApi
@@ -350,13 +347,22 @@ const gptTranslate = async function (
     : {
         "Content-Type": "application/json",
         Authorization: `Bearer ${data.secret}`,
-        "api-key": data.secret,
       };
 
-  const xhr = await Zotero.HTTP.request("POST", apiURL, {
+  // Key-based auth needs no cookies, and a redirect must not smuggle the key
+  // to another host, so the request stays anonymous and non-redirecting.
+  // A variable is used because `anon` is a runtime-only request option that
+  // the bundled typings do not declare.
+  const requestOptions = {
     headers: requestHeaders,
     body: JSON.stringify(requestBody),
     responseType: "text",
+    anon: true,
+    followRedirects: false,
+    // Never let the native HTTP layer log the request body or headers: they
+    // carry the API key.
+    debug: false,
+    logBodyLength: 0,
     requestObserver: (xmlhttp: XMLHttpRequest) => {
       if (streamMode) {
         streamCallback(xmlhttp);
@@ -364,270 +370,163 @@ const gptTranslate = async function (
         nonStreamCallback(xmlhttp);
       }
     },
-  });
+  };
+
+  const xhr = await Zotero.HTTP.request("POST", apiURL, requestOptions);
   if (xhr?.status !== 200) {
     throw `Request error: ${xhr?.status}`;
   }
-  // data.result = xhr.response.choices[0].message.content.substr(2);
 };
 
-function createGPTService(id: ID): TranslateService {
-  const checkSecret = id === "azuregpt" || id === "chatgpt";
+const prefPrefix = "chatGPT";
 
-  // For compatibility reasons, in older versions, the preference key was `chatGPT`, rather than matching the ID.
-  // customGPT1-3 use the same keys as chatGPT, with empty endpoints by default.
-  const prefPrefix = id.replace("gpt", "GPT") as
-    | "chatGPT"
-    | "customGPT1"
-    | "customGPT2"
-    | "customGPT3"
-    | "azureGPT";
+export const ChatGPT: TranslateService = {
+  id: "chatgpt",
+  type: "sentence",
+  helpUrl: "https://github.com/Kinetic27/zotero_paper_translate#service",
 
-  return {
-    id,
-    type: "sentence",
-    helpUrl:
-      id === "azuregpt"
-        ? "https://learn.microsoft.com/en-us/azure/ai-foundry/openai/reference#chat-completions"
-        : "https://gist.github.com/GrayXu/f1b72353b4b0493d51d47f0f7498b67b",
-
-    ...(checkSecret && {
-      defaultSecret: "",
-      secretValidator(secret: string) {
-        if (id === "chatgpt") {
-          const status = /^sk-[A-Za-z0-9_-]{32,}$/.test(secret);
-          const empty = secret.length === 0;
-          return {
-            secret,
-            status,
-            info: empty
-              ? "The secret is not set."
-              : status
-                ? "Click the button to check connectivity."
-                : "The secret key format is invalid.",
-          };
-        }
-
-        if (id === "azuregpt") {
-          const flag = Boolean(secret);
-          return {
-            secret,
-            status: flag,
-            info: flag ? "" : "The secret is not set.",
-          };
-        }
-
-        const status = secret.length > 0;
-        return {
-          secret,
-          status,
-          info: status
+  defaultSecret: "",
+  secretValidator(secret: string) {
+    // Any provider key is accepted as long as it can be sent verbatim in an
+    // HTTP header (printable ASCII, no whitespace or control characters).
+    const status = secret.length > 0 && !/[^\x21-\x7e]/.test(secret);
+    return {
+      secret,
+      status,
+      info:
+        secret.length === 0
+          ? "The secret is not set."
+          : status
             ? "Click the button to check connectivity."
-            : "The secret key format is invalid.",
-        };
-      },
-    }),
+            : "The secret key contains characters that cannot be sent in an HTTP header.",
+    };
+  },
 
-    async translate(data) {
-      switch (id) {
-        case "azuregpt": {
-          const endPoint = getPref("azureGPT.endPoint") as string;
-          const apiVersion = getPref("azureGPT.apiVersion");
-          const model = getPref("azureGPT.model") as string;
-          const temperature = parseFloat(
-            getPref("azureGPT.temperature") as string,
-          );
-          const stream = getPref("azureGPT.stream") as boolean;
-          const thinkingLevel = getPref("azureGPT.thinkingLevel") as string;
+  async translate(data) {
+    const model = getPref(`${prefPrefix}.model`) as string;
+    const temperature = parseFloat(
+      getPref(`${prefPrefix}.temperature`) as string,
+    );
+    const stream = getPref(`${prefPrefix}.stream`) as boolean;
+    const apiFormat = getPref(`${prefPrefix}.apiFormat`) as string;
+    // Users paste the base URL from the provider docs, expand it to the
+    // resource path the selected API format needs.
+    const apiURL = normalizeLLMEndpoint(
+      getPref(`${prefPrefix}.endPoint`) as string,
+      apiFormat,
+    );
+    const thinkingLevel = getPref(`${prefPrefix}.thinkingLevel`) as string;
 
-          const apiURL = new URL(endPoint);
-          apiURL.pathname = `/openai/deployments/${model}/chat/completions`;
-          apiURL.search = `api-version=${apiVersion}`;
+    return await gptTranslate(
+      apiURL,
+      model,
+      temperature,
+      prefPrefix,
+      data,
+      stream,
+      apiFormat,
+      thinkingLevel,
+    );
+  },
 
-          return await gptTranslate(
-            apiURL.href,
-            model,
-            temperature,
-            "azureGPT",
-            data,
-            stream,
-            undefined,
-            thinkingLevel,
-          );
-        }
-
-        case "chatgpt":
-        case "customgpt1":
-        case "customgpt2":
-        case "customgpt3": {
-          const model = getPref(`${prefPrefix}.model`) as string;
-          const temperature = parseFloat(
-            getPref(`${prefPrefix}.temperature`) as string,
-          );
-          const stream = getPref(`${prefPrefix}.stream`) as boolean;
-          const apiFormat =
-            prefPrefix === "customGPT1" ||
-            prefPrefix === "customGPT2" ||
-            prefPrefix === "customGPT3"
-              ? (getPref(`${prefPrefix}.apiFormat`) as string)
-              : undefined;
-          // Users paste the base URL from the provider docs, expand it to the
-          // resource path the selected API format needs.
-          const apiURL = normalizeLLMEndpoint(
-            getPref(`${prefPrefix}.endPoint`) as string,
-            apiFormat,
-          );
-          const thinkingLevel = getPref(
-            `${prefPrefix}.thinkingLevel`,
-          ) as string;
-
-          return await gptTranslate(
-            apiURL,
-            model,
-            temperature,
-            prefPrefix,
-            data,
-            stream,
-            apiFormat,
-            thinkingLevel,
-          );
-        }
-
-        default:
-          break;
-      }
-    },
-
-    config(settings) {
-      const servicePrefix = id === "azuregpt" ? "azuregpt" : "chatgpt";
-
-      settings
-        .addTextSetting({
-          prefKey: `${prefPrefix}.endPoint`,
-          nameKey: `service-${servicePrefix}-dialog-endPoint`,
-        })
-        .addTextSetting({
-          prefKey: `${prefPrefix}.model`,
-          nameKey: `service-${servicePrefix}-dialog-model`,
-        })
-        .addNumberSetting({
-          prefKey: `${prefPrefix}.temperature`,
-          nameKey: `service-${servicePrefix}-dialog-temperature`,
-          min: 0,
-          max: 2,
-          step: 0.1,
-        });
-
-      if (
-        id === "azuregpt" &&
-        prefPrefix === "azureGPT" &&
-        servicePrefix === "azuregpt"
-      ) {
-        settings.addTextSetting({
-          prefKey: `${prefPrefix}.apiVersion`,
-          nameKey: `service-${servicePrefix}-dialog-apiVersion`,
-          hidden: id !== "azuregpt",
-        });
-      }
-      if (
-        prefPrefix === "customGPT1" ||
-        prefPrefix === "customGPT2" ||
-        prefPrefix === "customGPT3"
-      ) {
-        settings
-          .addSelectSetting({
-            prefKey: `${prefPrefix}.apiFormat`,
-            nameKey: "service-chatgpt-dialog-apiFormat",
-            options: [
-              {
-                value: "openai",
-                label: getString("service-dialog-api-format-openai"),
-              },
-              {
-                value: "anthropic",
-                label: getString("service-dialog-api-format-anthropic"),
-              },
-            ],
-          })
-          .addStaticRow("", {
-            tag: "div",
-            namespace: "html",
-            styles: {
-              color: "var(--fill-secondary)",
-              fontSize: "0.9em",
-              maxWidth: "400px",
+  config(settings) {
+    settings
+      .addTextSetting({
+        prefKey: `${prefPrefix}.endPoint`,
+        nameKey: "service-chatgpt-dialog-endPoint",
+      })
+      .addTextSetting({
+        prefKey: `${prefPrefix}.model`,
+        nameKey: "service-chatgpt-dialog-model",
+      })
+      .addNumberSetting({
+        prefKey: `${prefPrefix}.temperature`,
+        nameKey: "service-chatgpt-dialog-temperature",
+        min: 0,
+        max: 2,
+        step: 0.1,
+      })
+      .addSelectSetting({
+        prefKey: `${prefPrefix}.apiFormat`,
+        nameKey: "service-chatgpt-dialog-apiFormat",
+        options: [
+          {
+            value: "openai",
+            label: getString("service-dialog-api-format-openai"),
+          },
+          {
+            value: "anthropic",
+            label: getString("service-dialog-api-format-anthropic"),
+          },
+        ],
+      })
+      .addStaticRow("", {
+        tag: "div",
+        namespace: "html",
+        styles: {
+          color: "var(--fill-secondary)",
+          fontSize: "0.9em",
+          maxWidth: "400px",
+        },
+        properties: {
+          textContent: getString("service-gpt-dialog-apiFormat-hint"),
+        },
+      })
+      .addTextAreaSetting({
+        prefKey: `${prefPrefix}.prompt`,
+        nameKey: "service-chatgpt-dialog-prompt",
+        placeholder: getString("service-chatgpt-dialog-prompt"),
+      })
+      .addStaticRow("", {
+        tag: "div",
+        namespace: "html",
+        styles: {
+          color: "var(--fill-secondary)",
+          fontSize: "0.9em",
+          maxWidth: "400px",
+        },
+        properties: {
+          textContent: getString("service-gpt-dialog-prompt-hint", {
+            args: {
+              variables: "${langFrom}, ${langTo}, ${sourceText}",
+              required: "${sourceText}",
             },
-            properties: {
-              textContent: getString("service-gpt-dialog-apiFormat-hint"),
-            },
-          });
-      }
-
-      settings
-        .addTextAreaSetting({
-          prefKey: `${prefPrefix}.prompt`,
-          nameKey: `service-${servicePrefix}-dialog-prompt`,
-          placeholder: getString(`service-${servicePrefix}-dialog-prompt`),
-        })
-        .addStaticRow("", {
-          tag: "div",
-          namespace: "html",
-          styles: {
-            color: "var(--fill-secondary)",
-            fontSize: "0.9em",
-            maxWidth: "400px",
-          },
-          properties: {
-            textContent: getString("service-gpt-dialog-prompt-hint", {
-              args: {
-                variables: "${langFrom}, ${langTo}, ${sourceText}",
-                required: "${sourceText}",
-              },
-            }),
-          },
-        })
-        .addCheckboxSetting({
-          prefKey: `${prefPrefix}.stream`,
-          nameKey: `service-${servicePrefix}-dialog-stream`,
-        })
-        .addSelectSetting({
-          prefKey: `${prefPrefix}.thinkingLevel`,
-          nameKey: `service-${servicePrefix}-dialog-thinkingLevel`,
-          options: getThinkingLevelOptions(),
-        })
-        .addStaticRow("", {
-          tag: "div",
-          namespace: "html",
-          styles: {
-            color: "var(--fill-secondary)",
-            fontSize: "0.9em",
-            maxWidth: "400px",
-          },
-          properties: {
-            textContent: getString("service-gpt-dialog-thinkingLevel-hint"),
-          },
-        })
-        .addCustomParamsSetting({
-          prefKey: `${prefPrefix}.customParams`,
-          nameKey: `service-${servicePrefix}-dialog-custom-request`,
-          desc: getString(
-            `service-${servicePrefix}-dialog-custom-request-description`,
-          ),
-        })
-        .onSave((data) => {
-          const prompt = String(data[`${prefPrefix}.prompt`] || "");
-          return hasSourceTextPlaceholder(prompt)
-            ? true
-            : getString("service-gpt-dialog-prompt-required", {
-                args: { placeholder: "${sourceText}" },
-              });
-        });
-    },
-  };
-}
-
-export const ChatGPT = createGPTService("chatgpt");
-export const customGPT1 = createGPTService("customgpt1");
-export const customGPT2 = createGPTService("customgpt2");
-export const customGPT3 = createGPTService("customgpt3");
-export const azureGPT = createGPTService("azuregpt");
+          }),
+        },
+      })
+      .addCheckboxSetting({
+        prefKey: `${prefPrefix}.stream`,
+        nameKey: "service-chatgpt-dialog-stream",
+      })
+      .addSelectSetting({
+        prefKey: `${prefPrefix}.thinkingLevel`,
+        nameKey: "service-chatgpt-dialog-thinkingLevel",
+        options: getThinkingLevelOptions(),
+      })
+      .addStaticRow("", {
+        tag: "div",
+        namespace: "html",
+        styles: {
+          color: "var(--fill-secondary)",
+          fontSize: "0.9em",
+          maxWidth: "400px",
+        },
+        properties: {
+          textContent: getString("service-gpt-dialog-thinkingLevel-hint"),
+        },
+      })
+      .addCustomParamsSetting({
+        prefKey: `${prefPrefix}.customParams`,
+        nameKey: "service-chatgpt-dialog-custom-request",
+        desc: getString("service-dialog-custom-request-description"),
+      })
+      .onSave((data) => {
+        const prompt = String(data[`${prefPrefix}.prompt`] || "");
+        return hasSourceTextPlaceholder(prompt)
+          ? true
+          : getString("service-gpt-dialog-prompt-required", {
+              args: { placeholder: "${sourceText}" },
+            });
+      });
+  },
+};

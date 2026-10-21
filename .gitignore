@@ -8,3 +8,9 @@ zotero-cmd.json
 .DS_Store
 .env
 .scaffold
+.gjc/
+.herdr-web-ui/
+HANDOFF.md
+.env.*
+__pycache__/
+*.pyc

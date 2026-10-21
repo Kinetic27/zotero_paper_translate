@@ -80,6 +80,10 @@ export interface TranslateTask {
    */
   silent?: boolean;
   /**
+   * Cancellation signal for providers that support aborting translation.
+   */
+  signal?: AbortSignal;
+  /**
    * Caller identifier.
    *
    * This is for translate service provider to identify the caller.
@@ -117,8 +121,9 @@ function maskAccessToken(token: string): string {
 }
 
 export function sanitizeTaskForLog(task: TranslateTask): TranslateTask {
+  const { signal, ...logTask } = task;
   return {
-    ...task,
+    ...logTask,
     ...(task.secret ? { secret: maskAccessToken(task.secret) } : {}),
     extraTasks: (task.extraTasks ?? []).map((extraTask) =>
       sanitizeTaskForLog(extraTask),
