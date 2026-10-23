@@ -4,7 +4,7 @@ title: "[Bug] "
 labels:
   - bug
   # - Needs Triage
-assignees: windingwind
+assignees: Kinetic27
 body:
   - type: checkboxes
     id: check-search
@@ -18,10 +18,10 @@ body:
   - type: checkboxes
     id: check-frequent
     attributes:
-      label: Have you checked the FAQ (https://github.com/windingwind/zotero-pdf-translate/issues/6)?
-      description: Please check the FAQ to see if your question has already been answered.
+      label: Have you checked the installation and usage instructions?
+      description: Read https://github.com/Kinetic27/zotero_paper_translate#readme before reporting.
       options:
-        - label: I have checked the FAQ
+        - label: I have checked the README
           required: true
 
   - type: checkboxes
@@ -39,12 +39,13 @@ body:
       description: |
         examples:
           - **OS**: Windows 11 22H2
-          - **Zotero Version**: 7.0.0
-          - **Plugin Version**: 1.0.0
+          - **Zotero Version**: 10.0.6
+          - **Plugin Version**: 2.4.38
       value: |
         - OS: 
         - Zotero Version: 
         - Plugin Version:
+        - Translation service:
     validations:
       required: true
 
@@ -54,7 +55,8 @@ body:
       label: Describe the bug
       description: |
         A clear and concise description of what the bug is.
-        If applicable, add screenshots and log to help explain your problem.
+        Include reproduction steps and expected behavior. Screenshots are optional.
+        Remove private document contents and identifying information before uploading.
     validations:
       required: true
 
@@ -69,8 +71,11 @@ body:
         3. Do steps to reproduce the bug
         4. In the debug output window, press `Ctrl/Cmd + S`
         5. Upload the debug output here
+        Share only the relevant excerpt after removing API keys, OAuth tokens,
+        account details, local private paths and sensitive document contents.
+        Do not upload login-manager files or your Zotero profile.
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: additional-context

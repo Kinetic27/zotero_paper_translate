@@ -13,9 +13,11 @@ linkset {
   border-top: var(--material-border);
 }
 
-translator-plugin-panel {
+window > __addonElementPrefix__-panel {
   width: 100%;
-  flex-grow: 1;
+  height: auto;
+  min-height: 0;
+  flex: 1 1 0%;
 }
 
 #extra-buttons button {

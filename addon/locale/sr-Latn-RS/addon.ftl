@@ -1,41 +1,27 @@
-service-huoshanweb = Volcengine Web
-service-tencenttransmart = Tencent Transmart
-service-huoshan = Huoshan
-service-googleapi = Google(API)
 service-google = Google
-service-cnki = CNKI
-service-youdao = Youdao
-service-youdaozhiyun = Youdao Zhiyun
-service-youdaozhiyunllm = Youdao LLM
-service-niutranspro = Niu Trans
-service-microsoft = Microsoft
-service-caiyun = Caiyun
-service-libretranslate = LibreTranslate
-service-mtranserver = MTranServer
-service-deeplfree = DeepL (besplatan paket)
-service-deeplpro = DeepL (Pro paket)
-service-deeplcustom = DeepLX(API)
-service-deeplx = DeepLX
-service-baidu = Baidu
-service-baidufield = Baidu Field
-service-openl = OpenL
-service-tencent = Tencent
-service-aliyun = Aliyun
-service-xftrans = Xftrans
-service-chatgpt = ChatGPT
-service-customgpt1 = Prilagođeni GPT 1
-service-customgpt2 = Prilagođeni GPT 2
-service-customgpt3 = Prilagođeni GPT 3
-service-azuregpt = AzureGPT
-service-gemini = Gemini
-service-qwenmt = Qwen-MT
-service-claude = Claude
-service-haici = Haici
-service-iciba = iCIBA
+service-googleapi = Google(API)
 service-bing = Bing
-service-pot = Pot
-service-nllb = NLLB
-service-mymemory = MyMemory
+service-deeplx = DeepLX
+service-chatgpt = ChatGPT
+service-claude = Claude
+service-gemini = Gemini
+service-codex = OpenAI Auth
+service-codex-model = Model
+service-codex-effort = Nivo razmišljanja
+service-codex-automatic = Automatski: prvi dostupni model
+service-codex-default-effort = Podrazumevano: podešavanje modela
+service-codex-loading = Učitavanje modela naloga…
+service-codex-signin-required = Prijavi se da bi se učitali tvoji modeli.
+service-codex-signing-in = Dovrši prijavu u pregledaču.
+service-codex-unavailable = Nedostupno: { $value }
+service-codex-selection-invalid = Proveri nalog i modele, pa izaberi dostupni model i podržani nivo razmišljanja pre čuvanja
+service-codex-loaded = Dostupno modela: { $count }
+service-codex-login = Prijavi se pomoću ChatGPT-a
+service-codex-status = Proveri nalog i modele
+service-codex-cancel-login = Otkaži prijavljivanje
+service-codex-logout = Odjavi se
+service-codex-hint = Izaberi model i nivo razmišljanja, pa sačuvaj.
+
 service-bingdict = Bing rečnik (en→zh)🔊
 service-cambridgedict = Cambridge rečnik (en→other)🔊
 service-haicidict = Haici rečnik (en→zh)🔊
@@ -50,13 +36,6 @@ service-errorPrefix = [Greška zahteva]
     https://github.com/windingwind/zotero-pdf-translate/issues
 
     Poruka ispod ne dolazi od Zotera ni dodatka Translate, već od servisa
-service-niutranspro-error-insufficient-balance =
-    Na NiuTrans nalogu nema dovoljno poena, pa zahtev za prevod ne može da se dovrši.
-    Kupi poene preko NiuTrans stranice za dopunu i pokušaj ponovo.
-
-    NiuTrans dopuna: https://niutrans.com/price
-
-    Kod greške: { $code } { $message }
 service-dialog-config = Podešavanja
 service-dialog-title = Podešavanja servisa { $service }
 service-dialog-save = Sačuvaj
@@ -80,91 +59,61 @@ service-dialog-custom-request-validation-example-boolean = - Logička vrednost: 
 service-dialog-custom-request-validation-example-number = - Broj: 123
 service-dialog-custom-request-validation-example-string = - Tekst: "text"
 service-dialog-custom-request-validation-example-object = - Objekat: { $example }
-service-niutranspro-dialog-endpoint = Adresa servisa
-service-niutranspro-dialog-username = Korisničko ime
-service-niutranspro-dialog-password = Lozinka
-service-niutranspro-dialog-signup = Registruj se
-service-niutranspro-dialog-forget = Zaboravljena lozinka
-service-niutranspro-dialog-dictLib = Biblioteka rečnika
-service-niutranspro-dialog-memoryLib = Biblioteka prevodilačke memorije
-service-niutranspro-dialog-tip0 = Idi na
-service-niutranspro-dialog-tip1 = NiuTrans Cloud Platform
-service-niutranspro-dialog-tip2 = da dodaš biblioteku termina
-service-niutranspro-dialog-signin = Prijavi se
-service-niutranspro-dialog-refresh = Osveži
-service-niutranspro-dialog-signout = Odjavi se
-service-deeplcustom-dialog-endPoint = Adresa servisa
-service-deeplx-dialog-endPoint = Adresa servisa
-service-chatgpt-dialog-endPoint = API adresa
-service-chatgpt-dialog-model = Model
+service-dialog-api-format-openai = OpenAI (chat/completions)
+service-dialog-api-format-anthropic = Anthropic (messages)
+service-gpt-dialog-thinkingLevel-hint = Format parametra razmišljanja se automatski prepoznaje prema adresi servisa (OpenAI/Azure, OpenRouter, GLM, DeepSeek, Kimi, Doubao, Qwen). Za nepoznate adrese (npr. relay) ne šalje se nijedan parametar: postavi ga ručno preko „Prilagođeni zahtev“.
+service-dialog-thinking-default = Podrazumevano
+service-dialog-thinking-off = Isključeno
+service-dialog-thinking-low = Nisko
+service-dialog-thinking-medium = Srednje
+service-dialog-thinking-high = Visoko
+
+service-deeplx-dialog-endPoint = Adresa API-ja
+
+service-chatgpt-dialog-endPoint = Osnovni URL API-ja
+service-chatgpt-dialog-model = ID modela
 service-chatgpt-dialog-temperature = Temperatura
+service-chatgpt-dialog-apiFormat = Format API-ja
 service-chatgpt-dialog-prompt = Uputstvo
 service-gpt-dialog-prompt-hint = Dostupne promenljive: { $variables }. { $required } je obavezna.
 service-gpt-dialog-prompt-required = Dodajte { $placeholder } da bi izabrani tekst mogao da se pošalje na prevođenje.
+service-gpt-dialog-apiFormat-hint = Ovaj jedan ChatGPT servis prihvata OpenAI-kompatibilne (chat/completions) i Anthropic-kompatibilne (messages) adrese. Izaberi format koji navodi dokumentacija pružaoca, pa unesi njegov osnovni URL API-ja, na primer https://api.deepseek.com ili https://api.openai.com/v1; kompletan URL resursa koristi se onako kako je upisan. Polje modela prima ID modela pružaoca. Unesi API ključ posebno u polje za tajni ključ izabranog servisa. Šalje se neizmenjen u zaglavlju koje izabrani format zahteva, pa nije potrebna sintaksa ključa specifična za pružaoca.
 service-chatgpt-dialog-stream = Tok odgovora
+service-chatgpt-dialog-thinkingLevel = Razmišljanje
 service-chatgpt-dialog-custom-request = Prilagođeni zahtev
-service-azuregpt-dialog-endPoint = Adresa servisa
-service-azuregpt-dialog-model = Naziv
-service-azuregpt-dialog-temperature = Temperatura
-service-azuregpt-dialog-apiVersion = Verzija
-service-azuregpt-dialog-prompt = Uputstvo
-service-azuregpt-dialog-stream = Tok odgovora
-service-azuregpt-dialog-custom-request = Prilagođeni zahtev
-service-xftrans-dialog-engine = API mehanizam
-service-gemini-dialog-endPoint = Adresa servisa
+
+service-gemini-dialog-endPoint = Osnovni URL API-ja (bez /models/model)
+service-gemini-dialog-model = ID modela
 service-gemini-dialog-prompt = Uputstvo
 service-gemini-dialog-stream = Tok odgovora
-service-qwenmt-dialog-endPoint = Adresa servisa
-service-qwenmt-dialog-model = Model
-service-qwenmt-dialog-domains = Oblasti
-service-claude-dialog-endPoint = Adresa servisa
-service-claude-dialog-model = Model
+service-gemini-dialog-thinkingLevel = Razmišljanje
+
+service-claude-dialog-endPoint = Osnovni URL API-ja
+service-claude-dialog-model = ID modela
 service-claude-dialog-temperature = Temperatura
 service-claude-dialog-prompt = Uputstvo
 service-claude-dialog-stream = Tok odgovora
+service-claude-dialog-thinkingLevel = Razmišljanje
 service-claude-dialog-maxTokens = Najviše tokena
-service-cnki-settings = Podešavanja
-service-cnki-dialog-regex = Regularni izraz za CNKI reklame
-service-cnki-dialog-split = Automatski podeli tekst duži od 800 znakova za prevođenje
-service-mymemory-dialog-userEmail = Besplatno povećanje limita: unesi e-poštu za 5.000 znakova dnevno po IP adresi
-service-aliyun-dialog-action = Radnja
-service-aliyun-dialog-scene = Oblast primene
-service-tencent-dialog-secretid = Tajni ID
-service-tencent-dialog-secretkey = Tajni ključ
-service-tencent-dialog-region = Region
-service-tencent-dialog-projectid = ID projekta
-service-tencent-dialog-termrepoid = ID-jevi zbirki termina (neobavezno)
-service-tencent-dialog-sentrepoid = ID-jevi zbirki rečenica (neobavezno)
-service-youdaozhiyun-dialog-domain = Oblast
-service-youdaozhiyunllm-dialog-model = Model
-service-youdaozhiyunllm-dialog-pro = Youdao LLM Pro-14B
-service-youdaozhiyunllm-dialog-lite = Youdao LLM Lite-1.5B
-service-youdaozhiyunllm-dialog-prompt = Uputstvo
-service-youdaozhiyunllm-dialog-stream = Tok odgovora
+
 readerpopup-translate-label = Prevedi
 readerpopup-addToNote-label = Dodaj prevod u belešku
-pref-title = Translate
+
+pref-title = Zotero Translation Reader
+
 field-titleTranslation = Prevod naslova
 field-abstractTranslation = Prevod sažetka
+
 status-translating = Prevođenje...
 sideBarIcon-title = Prevedi oznaku
+
 service-manageKeys-title = Upravljanje ključevima prevodilačkih servisa
 service-manageKeys-head = Upravljaj svim ključevima prevodilačkih servisa. Uredi JSON direktno i izaberi „Sačuvaj“.
 service-manageKeys-save = Sačuvaj
 service-manageKeys-close = Zatvori
-service-renameServices-title = Preimenuj prilagođene GPT servise
-service-renameServices-head = Unesi novi naziv i izaberi „Sačuvaj“.
+
+service-renameServices-title = Preimenuj nazive servisa prilagođenog API-ja
+service-renameServices-head = Unesi novi naziv za servise prilagođenog API-ja (ChatGPT, Claude, Gemini) i izaberi „Sačuvaj“.
 service-renameServices-hint = Izmene važe posle ponovnog pokretanja dodatka ili Zotera
 service-renameServices-save = Sačuvaj
 service-renameServices-close = Zatvori
-service-libretranslate-dialog-endPoint = API adresa
-service-mtranserver-dialog-endPoint = Adresa servisa
-service-mtranserver-dialog-versionlabel = Koristi MTranServer v3.0.0+
-service-pot-dialog-port = Port
-service-nllb-dialog-model = nllb model
-service-nllb-dialog-apiendpoint = nllb-api adresa servisa
-service-nllb-dialog-apistream = nllb-api tok odgovora
-service-nllb-dialog-serveendpoint = nllb-serve adresa servisa
-service-nllb-dialog-apilabel = nllb-api dokumentacija
-service-nllb-dialog-servelabel = nllb-serve dokumentacija
-

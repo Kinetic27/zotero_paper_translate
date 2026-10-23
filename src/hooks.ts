@@ -1,4 +1,5 @@
-import { config } from "../package.json";
+import { config, version } from "../package.json";
+import { shutdownCodex } from "./modules/codex";
 import { initLocale } from "./utils/locale";
 import {
   registerPrefsScripts,
@@ -26,6 +27,8 @@ import { registerExtraColumns } from "./modules/itemTree";
 import { registerShortcuts } from "./modules/shortcuts";
 import { registerItemPaneInfoRows } from "./modules/infoBox";
 import { registerCustomFields } from "./modules/fields";
+import { unregisterPageReader } from "./modules/pageReader";
+import { closeServiceSettingsDialogs } from "./utils/settingsDialog";
 
 async function onStartup() {
   await Promise.all([
@@ -85,7 +88,7 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   ]);
 
   Services.scriptloader.loadSubScript(
-    `chrome://${config.addonRef}/content/scripts/customElements.js`,
+    `chrome://${config.addonRef}/content/scripts/customElements.js?v=${version}`,
     win,
   );
 
@@ -110,6 +113,9 @@ async function onMainWindowUnload(win: Window): Promise<void> {
 }
 
 function onShutdown(): void {
+  closeServiceSettingsDialogs();
+  unregisterPageReader();
+  void shutdownCodex();
   ztoolkit.unregisterAll();
   Zotero.getMainWindows().forEach((win) => {
     onMainWindowUnload(win);

@@ -10,6 +10,12 @@ if (!basicTool.getGlobal("Zotero")[config.addonInstance]) {
   _globalThis.Zotero = basicTool.getGlobal("Zotero");
   defineGlobal("crypto");
   defineGlobal("TextEncoder");
+  defineGlobal("TextDecoder");
+  defineGlobal("AbortController");
+  defineGlobal("URL");
+  defineGlobal("URLSearchParams");
+  defineGlobal("btoa");
+  defineGlobal("atob");
   _globalThis.addon = new Addon();
   defineGlobal("ztoolkit", () => {
     return _globalThis.addon.data.ztoolkit;
