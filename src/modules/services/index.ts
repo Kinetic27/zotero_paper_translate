@@ -9,146 +9,45 @@ import {
   stripEmptyLines,
 } from "../../utils";
 
-import { Aliyun } from "./aliyun";
-import { Tencent } from "./tencent";
-import { ChatGPT, customGPT1, customGPT2, customGPT3, azureGPT } from "./gpt";
-import { Baidu } from "./baidu";
-import { BaiduField } from "./baidufield";
+import { ChatGPT } from "./gpt";
 import { Bing } from "./bing";
 import { BingDict } from "./bingdict";
-import { Caiyun } from "./caiyun";
 import { CambridgeDict } from "./cambridgedict";
 import { Claude } from "./claude";
-import { Cnki } from "./cnki";
 import { CollinsDict } from "./collinsdict";
-import { DeeplFree, DeeplPro } from "./deepl";
 import { FreeDictionaryAPI } from "./freedictionaryapi";
 import { Gemini } from "./gemini";
 import { Google, GoogleAPI } from "./google";
-import { Haici } from "./haici";
 import { HaiciDict } from "./haicidict";
 import { GramotaDict } from "./gramotadict";
-import { Huoshan } from "./huoshan";
-import { HuoshanWeb } from "./huoshanweb";
-import { Iciba } from "./iciba";
-import { LibreTranslate } from "./libretranslate";
-import { Microsoft } from "./microsoft";
-import { Mtranserver } from "./mtranserver";
-import { MyMemory } from "./mymemory";
-import { Niutrans } from "./niutrans";
-import { Nllb } from "./nllb";
-import { Openl } from "./openl";
-import { Pot } from "./pot";
-import { QwenMT } from "./qwenmt";
 import { WeblioDict } from "./webliodict";
-import { XFfrans } from "./xftrans";
-import { TencentTransmart } from "./tencenttransmart";
-import { Youdao } from "./youdao";
 import { YoudaoDict } from "./youdaodict";
-import { YoudaoZhiyun } from "./youdaozhiyun";
-import { YoudaoZhiyunLLM } from "./youdaozhiyunllm";
-import { DeepLCustom } from "./deeplcustom";
 import { DeepLX } from "./deeplx";
+import { Codex } from "./codex";
 
 const register: TranslateService[] = [
-  Aliyun,
-  Baidu,
-  BaiduField,
-  Bing,
-  BingDict,
-  Caiyun,
-  CambridgeDict,
-  Claude,
-  Cnki,
-  CollinsDict,
-  DeeplFree,
-  DeeplPro,
-  DeepLCustom,
-  DeepLX,
-  FreeDictionaryAPI,
-  Gemini,
-  GramotaDict,
   Google,
   GoogleAPI,
+  Bing,
+  DeepLX,
   ChatGPT,
-  customGPT1,
-  customGPT2,
-  customGPT3,
-  azureGPT,
-  Haici,
+  Claude,
+  Gemini,
+  Codex,
+  BingDict,
+  CambridgeDict,
+  CollinsDict,
+  FreeDictionaryAPI,
+  GramotaDict,
   HaiciDict,
-  Huoshan,
-  HuoshanWeb,
-  Iciba,
-  LibreTranslate,
-  Microsoft,
-  Mtranserver,
-  MyMemory,
-  Niutrans,
-  Nllb,
-  Openl,
-  Pot,
-  QwenMT,
-  Tencent,
-  TencentTransmart,
   WeblioDict,
-  XFfrans,
-  Youdao,
   YoudaoDict,
-  YoudaoZhiyun,
-  YoudaoZhiyunLLM,
 ];
 
 export class TranslationServices {
-  #services: readonly TranslateService[] = Object.freeze(
-    this.sortServices(register),
-  );
-
-  /**
-   * Sort the TranslateService list by the following rules:
-   * 1. Free and no-config services (no secret, no config) come first.
-   * 2. All other services are sorted by `id` in ascending order (case-insensitive).
-   * 3. Services whose `id` starts with "custom" are placed last
-   *    (sorted by `id` in ascending order within this group).
-   */
-  private sortServices<T extends TranslateService>(services: T[]) {
-    return services.sort((a, b) => {
-      const rank = (s: T) => {
-        const needsSecret = !!s.defaultSecret || !!s.secretValidator;
-        const hasConfig = !!s.config;
-        const needExternalConfig = s.requireExternalConfig;
-
-        // Rank for sentence services
-        if (s.type === "sentence") {
-          // Group 4: "custom" at the start → last
-          if (s.id.startsWith("custom")) return 3;
-
-          // Group 1: Free sentence services (no secret, no external config)
-          if (!needsSecret && !needExternalConfig) return 0;
-
-          // Group 2: No-secret but requires external config
-          if (!needsSecret && needExternalConfig) return 1;
-
-          // Group 3: Needs secret but no config
-          if (needsSecret && !hasConfig) return 2;
-
-          // Default (Sentence service needs secret and has config) — also rank 2
-          return 2;
-        }
-        // Rank for word services
-        else {
-          // Default //TODO Modify it if necessary in the future
-          return 0;
-        }
-      };
-
-      const ra = rank(a);
-      const rb = rank(b);
-
-      if (ra !== rb) return ra - rb;
-      return a.id.localeCompare(b.id);
-    });
-  }
+  // Keep the translation picker in its deliberate, compact display order.
+  // Word dictionaries remain a separate setting, not extra translation choices.
+  #services: readonly TranslateService[] = Object.freeze(register);
 
   public getServiceById(id: string): TranslateService | undefined {
     return this.#services.find((service) => service.id === id);
@@ -166,11 +65,7 @@ export class TranslationServices {
     const baseName =
       (getPref(`renameServices.${id}`) as string) || getString(`service-${id}`);
     const service = this.getServiceById(id);
-    if (
-      !!service?.defaultSecret ||
-      !!service?.secretValidator ||
-      id.startsWith("custom")
-    ) {
+    if (!!service?.defaultSecret || !!service?.secretValidator) {
       return baseName + "🗝️";
     }
     if (service?.requireExternalConfig) {
@@ -207,10 +102,7 @@ export class TranslationServices {
     }
 
     for (const service of this.#services) {
-      const needsSecret =
-        !!service.defaultSecret ||
-        !!service.secretValidator ||
-        service.id.startsWith("custom");
+      const needsSecret = !!service.defaultSecret || !!service.secretValidator;
 
       if (!needsSecret) continue;
 
@@ -287,7 +179,9 @@ export class TranslationServices {
     }
 
     let cacheHit = false;
-    if (!noCache) {
+    // OAuth inference must validate the current account, model and effort.
+    // The page reader separately owns configuration-aware saved-page caching.
+    if (!noCache && task.service !== "codex") {
       // Check cache
       const cachedTask = addon.data.translate.queue.findLast((_t) => {
         return (

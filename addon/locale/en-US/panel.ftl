@@ -8,9 +8,9 @@ translate =
 swapLanguage =
     .tooltiptext = Swap Language
 
-auto = Auto-Trans:
+auto = Selection / annotation automation:
 autoTranslateSelection =
-    .label = Selection
+    .label = Automatically translate selected text
 autoTranslateAnnotation =
     .label = Annotation
 

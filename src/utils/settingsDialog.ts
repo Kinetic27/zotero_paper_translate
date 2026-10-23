@@ -10,6 +10,24 @@ import { getString } from "./locale";
 import { SettingsDialogHelper } from "zotero-plugin-toolkit";
 import { FluentMessageId } from "../../typings/i10n";
 import { TranslateService } from "../modules/services/base";
+import { mountDynamicSelect } from "./dynamicSelect";
+
+const settingsWindows = new Set<Window>();
+
+function ownSettingsWindow(window: Window, unloaded: Promise<unknown>) {
+  if (window.closed) return;
+  settingsWindows.add(window);
+  // The toolkit ignores the initial about:blank unload while opening.
+  // Track its completed lifecycle, not that transient document event.
+  void unloaded.then(() => settingsWindows.delete(window));
+}
+
+export function closeServiceSettingsDialogs(): void {
+  for (const window of settingsWindows) {
+    if (!window.closed) window.close();
+  }
+  settingsWindows.clear();
+}
 
 export type ConfigField =
   | InputField
@@ -107,11 +125,14 @@ export type AllowedSettingsMethods = Pick<
   | "addTextSetting"
   | "addNumberSetting"
   | "addSelectSetting"
+  | "addDynamicSelectSetting"
   | "addTextAreaSetting"
   | "addCustomParamsSetting"
   | "addButton"
   | "addSetting"
   | "addStaticRow"
+  | "setWidth"
+  | "onOpen"
   | "onSave"
 >;
 
@@ -119,6 +140,49 @@ export class ServiceSettingsDialog extends SettingsDialogHelper {
   constructor() {
     super();
     this.setSettingHandlers(getPref, setPref);
+  }
+
+  setWidth(width: number): AllowedSettingsMethods {
+    const available = Zotero.getMainWindow().screen.availWidth - 40;
+    this.elementProps.styles = {
+      ...this.elementProps.styles,
+      width: `${Math.min(width, available)}px`,
+      boxSizing: "border-box",
+    };
+    this.elementProps.classList = [
+      ...(this.elementProps.classList || []),
+      "bounded-service-settings",
+    ];
+    this.elementProps.children!.splice(
+      this.elementProps.children!.length - 1,
+      0,
+      {
+        tag: "style",
+        namespace: "html",
+        properties: {
+          textContent: `
+          .bounded-service-settings .settings-grid {
+            min-width: 0;
+            grid-template-columns: max-content minmax(0, 1fr);
+          }
+          .bounded-service-settings .settings-grid > * {
+            min-width: 0 !important;
+            max-width: 100%;
+            white-space: normal;
+            overflow-wrap: anywhere;
+          }
+          .bounded-service-settings > hbox {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+            min-width: 0;
+          }
+        `,
+        },
+      },
+    );
+    return this;
   }
 
   addTextSetting(field: InputFieldText): AllowedSettingsMethods {
@@ -151,9 +215,10 @@ export class ServiceSettingsDialog extends SettingsDialogHelper {
       tag: "input",
       attributes: {
         type: "number",
-        min: field.min || 0,
-        max: field.max || 100,
-        step: field.step || 1,
+        required: true,
+        min: field.min ?? 0,
+        max: field.max ?? 100,
+        step: field.step ?? 1,
       },
       styles: {
         minWidth: "400px",
@@ -186,7 +251,7 @@ export class ServiceSettingsDialog extends SettingsDialogHelper {
       children: field.options.map(({ label, value }) => ({
         tag: "option",
         properties: {
-          innerHTML: label,
+          textContent: label,
           value,
         },
       })),
@@ -195,6 +260,21 @@ export class ServiceSettingsDialog extends SettingsDialogHelper {
         // auto resize to window width
         width: "-moz-available",
       },
+    });
+  }
+
+  addDynamicSelectSetting(field: SelectField): AllowedSettingsMethods {
+    // A hidden input avoids the toolkit's pre-open, static select substitution.
+    // The live picker mounts after settings values have been loaded.
+    this.addSetting(getString(field.nameKey), field.prefKey, {
+      tag: "input",
+      attributes: { type: "hidden" },
+    });
+    return this.onOpen((window) => {
+      const input = window.document.querySelector<HTMLInputElement>(
+        `input[data-setting-key="${field.prefKey}"]`,
+      )!;
+      mountDynamicSelect(input, field.options);
     });
   }
 
@@ -222,6 +302,15 @@ export class ServiceSettingsDialog extends SettingsDialogHelper {
 
   validater?: Validater;
   onSaveCallback?: () => void;
+  onOpen(callback: (window: Window) => void): AllowedSettingsMethods {
+    const previous = this.dialogData.loadCallback;
+    this.dialogData.loadCallback = () => {
+      previous?.();
+      callback(this.window!);
+    };
+    return this;
+  }
+
   onSave(validate?: Validater) {
     this.validater = validate;
     return this;
@@ -250,9 +339,33 @@ export async function createServiceSettingsDialog(
   const serviceName = service.name || getString(`service-${id}`);
   dialog
     .addButton(getString(`service-dialog-close`), "close")
-    .addAutoSaveButton(getString(`service-dialog-save`), "save", {
-      // https://github.com/windingwind/zotero-plugin-toolkit/issues/87
-      validate: dialog.validater,
+    .addButton(getString(`service-dialog-save`), "save", {
+      noClose: true,
+      callback: async () => {
+        const result = await dialog.validater?.(dialog.getAllSettingsData());
+        if (!dialog.window || dialog.window.closed) return;
+        if (result !== undefined && result !== true) {
+          Zotero.alert(dialog.window, serviceName, result);
+          return;
+        }
+        for (const input of Array.from(
+          dialog.window.document.querySelectorAll(
+            'input[type="number"][data-setting-key]',
+          ),
+        ) as HTMLInputElement[]) {
+          if (
+            !input.reportValidity() ||
+            !Number.isFinite(input.valueAsNumber)
+          ) {
+            input.focus();
+            return;
+          }
+        }
+        // Save only after successful validation. The toolkit's auto-save
+        // button also saves on unload after a rejected Save, even on cancel.
+        dialog.saveAllSettings();
+        dialog.window?.close();
+      },
     })
 
     .open(
@@ -260,6 +373,7 @@ export async function createServiceSettingsDialog(
         args: { service: serviceName },
       }),
     );
+  ownSettingsWindow(dialog.window, dialog.dialogData.unloadLock!.promise);
 }
 
 // =======================================================
@@ -411,7 +525,7 @@ function formatCustomParamsValidationMessage(
   return lines.join("\n");
 }
 
-async function openCustomRequestDialog(prefKey: string) {
+function openCustomRequestDialog(prefKey: string) {
   const dialog = new ztoolkit.Dialog(2, 1);
   const parameterNameHeader = getString(
     "service-dialog-custom-request-parameter-name",
@@ -445,10 +559,6 @@ async function openCustomRequestDialog(prefKey: string) {
 
   // Add empty pair for new entries
   keyValuePairs.push({ key: "", value: "" });
-
-  const dialogData: { [key: string | number]: any } = {
-    customParams: keyValuePairs,
-  };
 
   let paramIndex = keyValuePairs.length;
 
@@ -503,7 +613,6 @@ async function openCustomRequestDialog(prefKey: string) {
   };
 
   dialog
-    .setDialogData(dialogData)
     .addCell(
       0,
       0,
@@ -646,31 +755,27 @@ async function openCustomRequestDialog(prefKey: string) {
       false,
     )
     .addButton(getString(`service-dialog-close`), "close")
-    .addButton(getString(`service-dialog-save`), "save")
-    .open(getString(`service-dialog-custom-request-title`));
-
-  await dialogData.unloadLock?.promise;
-
-  switch (dialogData._lastButtonId) {
-    case "save": {
-      const { params, errors } = parseCustomParamsFromDialog(
-        dialog.window.document,
-      );
-
-      if (errors.length) {
-        Zotero.alert(
-          dialog.window,
-          getString("service-dialog-custom-request-validation-title"),
-          formatCustomParamsValidationMessage(errors),
+    .addButton(getString(`service-dialog-save`), "save", {
+      noClose: true,
+      callback: () => {
+        if (dialog.window.closed) return;
+        const { params, errors } = parseCustomParamsFromDialog(
+          dialog.window.document,
         );
-        break;
-      }
 
-      setPref(prefKey, JSON.stringify(params));
-      break;
-    }
+        if (errors.length) {
+          Zotero.alert(
+            dialog.window,
+            getString("service-dialog-custom-request-validation-title"),
+            formatCustomParamsValidationMessage(errors),
+          );
+          return;
+        }
 
-    default:
-      break;
-  }
+        setPref(prefKey, JSON.stringify(params));
+        dialog.window.close();
+      },
+    })
+    .open(getString(`service-dialog-custom-request-title`));
+  ownSettingsWindow(dialog.window, dialog.dialogData.unloadLock!.promise);
 }

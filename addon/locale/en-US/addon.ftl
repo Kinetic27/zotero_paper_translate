@@ -1,41 +1,27 @@
-service-huoshanweb=Volcengine Web
-service-tencenttransmart=Tencent Transmart
-service-huoshan=Huoshan
-service-googleapi=Google(API)
 service-google=Google
-service-cnki=CNKI
-service-youdao=Youdao
-service-youdaozhiyun=Youdao Zhiyun
-service-youdaozhiyunllm=Youdao LLM
-service-niutranspro=Niu Trans
-service-microsoft=Microsoft
-service-caiyun=Caiyun
-service-libretranslate=LibreTranslate
-service-mtranserver=MTranServer
-service-deeplfree=DeepL(Free Plan)
-service-deeplpro=DeepL(Pro Plan)
-service-deeplcustom=DeepLX(API)
-service-deeplx=DeepLX
-service-baidu=Baidu
-service-baidufield=Baidu Field
-service-openl=OpenL
-service-tencent=Tencent
-service-aliyun=Aliyun
-service-xftrans=Xftrans
-service-chatgpt=ChatGPT
-service-customgpt1=Custom GPT 1
-service-customgpt2=Custom GPT 2
-service-customgpt3=Custom GPT 3
-service-azuregpt=AzureGPT
-service-gemini=Gemini
-service-qwenmt=Qwen-MT
-service-claude=Claude
-service-haici=Haici
-service-iciba=iCIBA
+service-googleapi=Google(API)
 service-bing=Bing
-service-pot=Pot
-service-nllb=NLLB
-service-mymemory=MyMemory
+service-deeplx=DeepLX
+service-chatgpt=ChatGPT
+service-claude=Claude
+service-gemini=Gemini
+service-codex=OpenAI Auth
+service-codex-model=Model
+service-codex-effort=Reasoning effort
+service-codex-automatic=Automatic: first available model
+service-codex-default-effort=Default: model setting
+service-codex-loading=Loading account models…
+service-codex-signin-required=Sign in to load your models.
+service-codex-signing-in=Complete sign-in in your browser.
+service-codex-unavailable=Unavailable: { $value }
+service-codex-selection-invalid=Check account and models, then select an available model and supported reasoning effort before saving
+service-codex-loaded={ $count } models available
+service-codex-login=Sign in with ChatGPT
+service-codex-status=Check account and models
+service-codex-cancel-login=Cancel sign-in
+service-codex-logout=Sign out
+service-codex-hint=Choose a model and reasoning effort, then Save.
+
 service-bingdict=Bing Dict(en→zh)🔊
 service-cambridgedict=Cambridge Dict(en→other)🔊
 service-haicidict=Haici Dict(en→zh)🔊
@@ -50,14 +36,6 @@ service-errorPrefix=[Request Error]
     https://github.com/windingwind/zotero-pdf-translate/issues
     
     The message below is not Zotero or the Translate plugin, but from
-
-service-niutranspro-error-insufficient-balance=
-    The current NiuTrans points balance is insufficient, so the translation request cannot be completed.
-    Please purchase points from the NiuTrans recharge center and try again.
-
-    NiuTrans recharge center: https://niutrans.com/price
-
-    Error code: { $code } { $message }
 
 service-dialog-config=Config
 service-dialog-title={ $service } Config
@@ -91,90 +69,38 @@ service-dialog-thinking-low=Low
 service-dialog-thinking-medium=Medium
 service-dialog-thinking-high=High
 
-service-niutranspro-dialog-endpoint=Endpoint
-service-niutranspro-dialog-username=Username
-service-niutranspro-dialog-password=Password
-service-niutranspro-dialog-signup=Sign up
-service-niutranspro-dialog-forget=Forget
-service-niutranspro-dialog-dictLib=Dict Lib
-service-niutranspro-dialog-memoryLib=Memory Lib
-service-niutranspro-dialog-tip0=Please go to the
-service-niutranspro-dialog-tip1=Niutrans Cloud Platform
-service-niutranspro-dialog-tip2=to add the term dictionary library
-service-niutranspro-dialog-signin=Sign In
-service-niutranspro-dialog-refresh=Refresh
-service-niutranspro-dialog-signout=Sign Out
+service-deeplx-dialog-endPoint=API Endpoint
 
-service-deeplcustom-dialog-endPoint=EndPoint
-service-deeplx-dialog-endPoint=EndPoint
-
-service-chatgpt-dialog-endPoint=API
-service-chatgpt-dialog-model=Model
+service-chatgpt-dialog-endPoint=API Base URL
+service-chatgpt-dialog-model=Model ID
 service-chatgpt-dialog-temperature=Temp
 service-chatgpt-dialog-apiFormat=API Format
 service-chatgpt-dialog-prompt=Prompt
 service-gpt-dialog-prompt-hint=Available variables: { $variables }. { $required } is required.
 service-gpt-dialog-prompt-required=Please add { $placeholder } so the selected text can be sent for translation.
-service-gpt-dialog-apiFormat-hint=The EndPoint accepts the base URL from the provider docs: https://api.deepseek.com becomes https://api.deepseek.com/v1/chat/completions (Anthropic format: https://api.anthropic.com/v1/messages). Any already complete URL, e.g. https://api.openai.com/v1/chat/completions or https://api.openai.com/v1/responses, is used as typed. For the Anthropic format the key is sent as x-api-key.
+service-gpt-dialog-apiFormat-hint=This single ChatGPT service accepts both OpenAI-compatible (chat/completions) and Anthropic-compatible (messages) endpoints. Pick the format your provider documents, then enter its API base URL, for example https://api.deepseek.com or https://api.openai.com/v1; a complete resource URL is also used as typed. The model field takes the provider's model ID. Enter the API key separately in the selected service's Secret field. It is sent as-is in the header the selected format expects, so no vendor-specific key syntax is required.
 service-chatgpt-dialog-stream=Stream
 service-chatgpt-dialog-thinkingLevel=Thinking
 service-chatgpt-dialog-custom-request=Custom Request
 
-service-azuregpt-dialog-endPoint=EndPoint
-service-azuregpt-dialog-model=Name
-service-azuregpt-dialog-temperature=Temp
-service-azuregpt-dialog-apiVersion=Version
-service-azuregpt-dialog-prompt=Prompt
-service-azuregpt-dialog-stream=Stream
-service-azuregpt-dialog-thinkingLevel=Thinking
-service-azuregpt-dialog-custom-request=Custom Request
-
-service-xftrans-dialog-engine=API Engine
-
-service-gemini-dialog-endPoint=EndPoint
+service-gemini-dialog-endPoint=API Base URL (without /models/model)
+service-gemini-dialog-model=Model ID
 service-gemini-dialog-prompt=Prompt
 service-gemini-dialog-stream=Stream
 service-gemini-dialog-thinkingLevel=Thinking
 
-service-qwenmt-dialog-endPoint=EndPoint
-service-qwenmt-dialog-model=Model
-service-qwenmt-dialog-domains=Domains
-
-service-claude-dialog-endPoint=EndPoint
-service-claude-dialog-model=Model
+service-claude-dialog-endPoint=API Base URL
+service-claude-dialog-model=Model ID
 service-claude-dialog-temperature=Temp
 service-claude-dialog-prompt=Prompt
 service-claude-dialog-stream=Stream
 service-claude-dialog-thinkingLevel=Thinking
 service-claude-dialog-maxTokens=Max Tokens
 
-service-cnki-settings=Settings
-service-cnki-dialog-regex=CNKI Addvertisements Regex
-service-cnki-dialog-split=Automatically split translation for more than 800 characters
-
-service-mymemory-dialog-userEmail=Free upgrade: enter email for 5K chars/day per IP
-
-service-aliyun-dialog-action=Action
-service-aliyun-dialog-scene=Scene
-
-service-tencent-dialog-secretid=Secret ID
-service-tencent-dialog-secretkey=Secret Key
-service-tencent-dialog-region=Region
-service-tencent-dialog-projectid=Project ID
-service-tencent-dialog-termrepoid=Term Repo IDs (optional)
-service-tencent-dialog-sentrepoid=Sent Repo IDs (optional)
-
-service-youdaozhiyun-dialog-domain=Domain
-service-youdaozhiyunllm-dialog-model=Model
-service-youdaozhiyunllm-dialog-pro=Youdao LLM Pro-14B
-service-youdaozhiyunllm-dialog-lite=Youdao LLM Lite-1.5B
-service-youdaozhiyunllm-dialog-prompt=Prompt
-service-youdaozhiyunllm-dialog-stream=Stream
-
 readerpopup-translate-label=Translate
 readerpopup-addToNote-label=Add Translation to Note
 
-pref-title=Translate
+pref-title=Zotero Translation Reader
 
 field-titleTranslation=Title Translation
 field-abstractTranslation=Abstract Translation
@@ -187,22 +113,8 @@ service-manageKeys-head=Manage all translation service keys. Edit the JSON direc
 service-manageKeys-save=Save
 service-manageKeys-close=Close
 
-service-renameServices-title=Rename Custom GPT Services
-service-renameServices-head=Input the new name and click Save.
+service-renameServices-title=Rename Custom API Service Names
+service-renameServices-head=Enter a new display name for the custom API services (ChatGPT, Claude, Gemini) and click Save.
 service-renameServices-hint=Changes take effect after restarting the plugin or Zotero
 service-renameServices-save=Save
 service-renameServices-close=Close
-
-service-libretranslate-dialog-endPoint=API Endpoint
-
-service-mtranserver-dialog-endPoint=EndPoint
-service-mtranserver-dialog-versionlabel=Use MTranServer v3.0.0+
-
-service-pot-dialog-port=Port
-
-service-nllb-dialog-model=nllb Model
-service-nllb-dialog-apiendpoint=nllb-api EndPoint
-service-nllb-dialog-apistream=nllb-api Stream
-service-nllb-dialog-serveendpoint=nllb-serve EndPoint
-service-nllb-dialog-apilabel=nllb-api Docs
-service-nllb-dialog-servelabel=nllb-serve Docs
