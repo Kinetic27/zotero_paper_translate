@@ -5,18 +5,112 @@ import {
   stripThinkingTags,
 } from "../../utils";
 import { TranslateService } from "./base";
-import type { TranslateTask } from "../../utils/task";
+
+const INVALID_KEY_INFO =
+  "The API key contains characters that cannot be sent in an HTTP header.";
+
+function isHeaderSafeSecret(secret: string): boolean {
+  // Any provider key is accepted as long as it can be sent verbatim in an
+  // HTTP header: printable ASCII with no whitespace or control characters.
+  return secret.length > 0 && !/[^\x21-\x7e]/.test(secret);
+}
+
+/**
+ * Gemini accepts a base URL (`https://generativelanguage.googleapis.com/v1beta`)
+ * or a proxy prefix. The model is a separate setting, so append the generation
+ * resource to the base and keep any query parameters already present.
+ */
+function buildGeminiEndpoint(
+  endPoint: unknown,
+  model: unknown,
+  stream: boolean,
+): string {
+  const raw = String(endPoint ?? "").trim();
+  if (!raw) {
+    throw "Gemini EndPoint is not set.";
+  }
+  const trimmedModel = String(model ?? "").trim();
+  if (!trimmedModel) {
+    throw "Gemini Model is not set.";
+  }
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw `Gemini EndPoint is not a valid URL: ${raw}`;
+  }
+  const resource = stream ? "streamGenerateContent" : "generateContent";
+  // A plain model id gets the `models/` collection; a fully qualified
+  // resource (`models/x`, `tunedModels/x`) is used as typed. Assigning
+  // pathname percent-encodes spaces while keeping `/`.
+  const collection = trimmedModel.includes("/") ? "" : "models/";
+  url.pathname = `${url.pathname.replace(/\/+$/, "")}/${collection}${trimmedModel}:${resource}`;
+  if (stream) {
+    url.searchParams.set("alt", "sse");
+  }
+  return url.href;
+}
+
+/** Text parts of a Gemini response, excluding thought parts. */
+function extractText(payload: any): string {
+  const parts = payload?.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts)) return "";
+  return parts
+    .filter((part: any) => !part.thought && typeof part.text === "string")
+    .map((part: any) => part.text)
+    .join("");
+}
+
+/** Parse a complete Gemini SSE body, ignoring thought parts. */
+function parseGeminiSSE(text: string): string {
+  let result = "";
+  for (const rawLine of text.split("\n")) {
+    const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
+    if (!line.startsWith("data:")) continue;
+    const payload = line.slice(5).trim();
+    if (!payload || payload === "[DONE]") continue;
+    try {
+      result += extractText(JSON.parse(payload));
+    } catch {
+      // Malformed frames are skipped.
+    }
+  }
+  return result;
+}
+
+/**
+ * Parse a completed Gemini streaming body. Some proxies ignore `alt=sse` and
+ * return a JSON object or array, so fall back to plain JSON when no SSE frame
+ * produced text.
+ */
+function parseGeminiBody(text: string): string {
+  const sse = parseGeminiSSE(text);
+  if (sse) return sse;
+  try {
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed)
+      ? parsed.map(extractText).join("")
+      : extractText(parsed);
+  } catch {
+    return sse;
+  }
+}
 
 const translate = <TranslateService["translate"]>async function (data) {
-  const apiURL = getPref("gemini.endPoint") as string;
+  const endPoint = getPref("gemini.endPoint");
+  const model = getPref("gemini.model");
   const thinkingLevel = getPref("gemini.thinkingLevel") as string;
+  const stream = getPref("gemini.stream") as boolean;
 
   function getGenerationConfig() {
     // Gemini 3 replaces thinkingBudget with the thinkingLevel field; it
     // cannot be fully disabled there, so "off" maps to "minimal"
     // https://ai.google.dev/gemini-api/docs/thinking
-    const modelMatch = /models\/([^/?#]+)/.exec(apiURL);
-    const isGemini3 = /^gemini-3/.test(modelMatch?.[1] || "");
+    const modelId = String(model ?? "")
+      .trim()
+      .split("/")
+      .pop();
+    const isGemini3 = /^gemini-3/.test(modelId ?? "");
     if (thinkingLevel === "off") {
       return {
         thinkingConfig: isGemini3
@@ -53,13 +147,13 @@ const translate = <TranslateService["translate"]>async function (data) {
     );
   }
 
-  function getGenContentAPI(data: Required<TranslateTask>) {
-    const stream = getPref("gemini.stream") as boolean;
-    if (stream) {
-      return apiURL + `:streamGenerateContent?alt=sse&key=${data.secret}`;
-    } else {
-      return apiURL + `:generateContent?key=${data.secret}`;
-    }
+  const apiURL = buildGeminiEndpoint(endPoint, model, stream);
+
+  if (!data.secret) {
+    throw "The Gemini API key is not set.";
+  }
+  if (!isHeaderSafeSecret(data.secret)) {
+    throw INVALID_KEY_INFO;
   }
 
   const refreshHandler = addon.api.getTemporaryRefreshHandler({ task: data });
@@ -70,9 +164,11 @@ const translate = <TranslateService["translate"]>async function (data) {
     data.raw,
   );
 
-  const xhr = await Zotero.HTTP.request("POST", getGenContentAPI(data), {
+  const generationConfig = getGenerationConfig();
+  const requestOptions = {
     headers: {
       "Content-Type": "application/json",
+      "x-goog-api-key": data.secret,
     },
     body: JSON.stringify({
       contents: [
@@ -92,52 +188,90 @@ const translate = <TranslateService["translate"]>async function (data) {
           },
         ],
       },
-      ...(getGenerationConfig()
-        ? { generationConfig: getGenerationConfig() }
-        : {}),
+      ...(generationConfig ? { generationConfig } : {}),
     }),
     responseType: "text",
+    // The request body is the user's document and the key is a secret: log
+    // neither. Do not inherit cookies and do not forward the key on redirects.
+    anon: true,
+    followRedirects: false,
+    noCache: true,
+    logBodyLength: 0,
+    debug: false,
     requestObserver: (xmlhttp: XMLHttpRequest) => {
+      xmlhttp.overrideMimeType("text/plain; charset=utf-8");
+      if (!stream) return;
+
       let preLength = 0;
       let result = "";
-      xmlhttp.onprogress = (e: any) => {
-        // Only concatenate the new strings
-        const newResponse = e.target.response.slice(preLength);
-        const dataArray = newResponse.split("data: ");
+      // SSE frames can be split across progress events; only parse complete
+      // lines and keep the trailing fragment until the next event.
+      let buffer = "";
 
-        for (const data of dataArray) {
-          if (data) {
-            try {
-              // Thought parts (part.thought === true) must not leak into
-              // the translation result
-              const parts =
-                JSON.parse(data).candidates?.[0]?.content?.parts || [];
-              result += parts
-                .filter((part: any) => !part.thought && part.text)
-                .map((part: any) => part.text)
-                .join("");
-            } catch {
-              // Skip invalid JSON - might be a partial chunk
-            }
+      const consume = (final: boolean) => {
+        const response = String(xmlhttp.response || "");
+        if (response.length > preLength) {
+          buffer += response.slice(preLength);
+          preLength = response.length;
+        }
+        const lines = buffer.split("\n");
+        buffer = final ? "" : lines.pop() || "";
+        for (const rawLine of lines) {
+          const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
+          if (!line.startsWith("data:")) continue;
+          const payload = line.slice(5).trim();
+          if (!payload || payload === "[DONE]") continue;
+          try {
+            result += extractText(JSON.parse(payload));
+          } catch {
+            // A malformed frame is skipped; fragmented frames never reach
+            // JSON.parse because the line buffer holds them.
           }
         }
 
-        // Clear timeouts caused by stream transfers
-        if (e.target.timeout) {
-          e.target.timeout = 0;
+        if (xmlhttp.timeout) {
+          xmlhttp.timeout = 0;
         }
 
         data.result = stripThinkingTags(result);
-        preLength = e.target.response.length;
-
         refreshHandler();
       };
+
+      xmlhttp.onprogress = () => {
+        try {
+          consume(false);
+        } catch (error) {
+          console.error("Error processing Gemini stream:", error);
+        }
+      };
+      xmlhttp.onload = () => {
+        try {
+          consume(true);
+        } catch (error) {
+          console.error("Error processing Gemini stream:", error);
+        }
+      };
     },
-  });
+  };
+
+  const xhr = await Zotero.HTTP.request("POST", apiURL, requestOptions);
   if (xhr?.status !== 200) {
     throw `Request error: ${xhr?.status}`;
   }
-  // data.result = xhr.response.choices[0].message.content.substr(2);
+  if (stream) {
+    // The complete body is authoritative regardless of progress-event
+    // boundaries, so a final fragment is never lost.
+    data.result = stripThinkingTags(parseGeminiBody(xhr.responseText || ""));
+  } else {
+    try {
+      data.result = stripThinkingTags(
+        extractText(JSON.parse(xhr.responseText)),
+      );
+    } catch (error) {
+      throw `Failed to parse response: ${error}`;
+    }
+    refreshHandler();
+  }
 };
 
 export const Gemini: TranslateService = {
@@ -147,11 +281,14 @@ export const Gemini: TranslateService = {
 
   defaultSecret: "",
   secretValidator(secret: string) {
-    const flag = Boolean(secret);
     return {
       secret,
-      status: flag,
-      info: flag ? "" : "The secret is not set.",
+      status: isHeaderSafeSecret(secret),
+      info: !secret
+        ? "The secret is not set."
+        : isHeaderSafeSecret(secret)
+          ? ""
+          : INVALID_KEY_INFO,
     };
   },
 
@@ -162,6 +299,10 @@ export const Gemini: TranslateService = {
       .addTextSetting({
         prefKey: "gemini.endPoint",
         nameKey: "service-gemini-dialog-endPoint",
+      })
+      .addTextSetting({
+        prefKey: "gemini.model",
+        nameKey: "service-gemini-dialog-model",
       })
       .addTextAreaSetting({
         prefKey: "gemini.prompt",

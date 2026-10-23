@@ -1,6 +1,5 @@
 import { defineConfig } from "zotero-plugin-scaffold";
 import pkg from "./package.json";
-import { copyFileSync } from "fs";
 
 export default defineConfig({
   source: ["src", "addon"],
@@ -8,11 +7,11 @@ export default defineConfig({
   name: pkg.config.addonName,
   id: pkg.config.addonID,
   namespace: pkg.config.addonRef,
-  updateURL: `https://github.com/{{owner}}/{{repo}}/releases/download/release/${
+  updateURL: `https://github.com/Kinetic27/zotero_paper_translate/releases/download/release/${
     pkg.version.includes("-") ? "update-beta.json" : "update.json"
   }`,
   xpiDownloadLink:
-    "https://github.com/{{owner}}/{{repo}}/releases/download/v{{version}}/{{xpiName}}.xpi",
+    "https://github.com/Kinetic27/zotero_paper_translate/releases/download/v{{version}}/{{xpiName}}.xpi",
 
   server: {
     asProxy: false,
@@ -23,6 +22,29 @@ export default defineConfig({
       // test/gptApiFormat.test.ts sends its requests to this mock server. It
       // runs in the tester's process, so it stops when the tests exit.
       "test:init": async () => {
+        // The scaffold empties its test profile/data before this hook. Restore
+        // only this diagnostic's own first-process data for the restart phase.
+        const restart = process.env.ZOTERO_READER_RESTART_TEST;
+        if (restart && process.env.ZOTERO_READER_RESTART_PHASE === "2") {
+          const { cp, copyFile } = await import("node:fs/promises");
+          const { basename, dirname, join, resolve } =
+            await import("node:path");
+          const { tmpdir } = await import("node:os");
+          if (
+            dirname(resolve(restart)) !== resolve(tmpdir()) ||
+            !basename(restart).startsWith("reader-restart-")
+          ) {
+            throw new Error("Invalid reader restart diagnostic directory.");
+          }
+          await cp(join(restart, "data"), resolve(".scaffold/test/data"), {
+            recursive: true,
+            preserveTimestamps: true,
+          });
+          await copyFile(
+            join(restart, "prefs.js"),
+            resolve(".scaffold/test/profile/prefs.js"),
+          );
+        }
         const { startMockLLMServer } =
           await import("./test/mock-llm-server.mjs");
         await startMockLLMServer();
@@ -34,6 +56,7 @@ export default defineConfig({
     assets: ["addon/**/*.*"],
     define: {
       ...pkg.config,
+      addonElementPrefix: `${pkg.config.addonRef.toLowerCase()}-${pkg.version.replace(/[^a-z0-9]/gi, "-").toLowerCase()}`,
       author: pkg.author,
       description: pkg.description,
       homepage: pkg.homepage,
@@ -54,23 +77,5 @@ export default defineConfig({
         outdir: "build/addon/chrome/content/scripts",
       },
     ],
-    // If you want to checkout update.json into the repository, uncomment the following lines:
-    // makeUpdateJson: {
-    //   hash: false,
-    // },
-    // hooks: {
-    //   "build:makeUpdateJSON": (ctx) => {
-    //     copyFileSync("build/update.json", "update.json");
-    //     copyFileSync("build/update-beta.json", "update-beta.json");
-    //   },
-    // },
   },
-  // release: {
-  //   bumpp: {
-  //     execute: "npm run build",
-  //   },
-  // },
-
-  // If you need to see a more detailed build log, uncomment the following line:
-  // logLevel: "trace",
 });

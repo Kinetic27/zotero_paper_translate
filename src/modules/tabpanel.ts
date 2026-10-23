@@ -5,8 +5,13 @@ import { getLastTranslateTask } from "../utils/task";
 import { TranslatorPanel } from "../elements/panel";
 import { isWindowAlive } from "../utils/window";
 import { services } from "./services";
+import { elementPrefix } from "../utils/elementIdentity";
 
 let paneKey = "";
+const heightObservers = new WeakMap<
+  HTMLElement,
+  { schedule: () => void; destroy: () => void }
+>();
 
 export function registerReaderTabPanel() {
   const key = Zotero.ItemPaneManager.registerSection({
@@ -22,17 +27,19 @@ export function registerReaderTabPanel() {
       // @ts-ignore
       orderable: false,
     },
-    bodyXHTML: "<translator-plugin-panel />",
+    bodyXHTML: `<${elementPrefix}-panel />`,
     onInit,
     onDestroy,
     onRender: ({ body, item }) => {
       const panel = body.querySelector(
-        "translator-plugin-panel",
+        `${elementPrefix}-panel`,
       ) as TranslatorPanel;
       panel.item = item;
       panel.render();
+      observePanelHeight(body);
       onUpdateHeight({ body });
     },
+    onToggle: ({ body }) => heightObservers.get(body)?.schedule(),
     onItemChange,
     sectionButtons: [
       {
@@ -94,6 +101,7 @@ function onInit({ body, refresh }: { body: HTMLElement; refresh: () => void }) {
   const paneUID = Zotero.Utilities.randomString(8);
   body.dataset.paneUid = paneUID;
   addon.data.panel.activePanels[paneUID] = refresh;
+  observePanelHeight(body);
 }
 
 function buildExtraPanel(doc: Document) {
@@ -260,7 +268,7 @@ function onItemChange({
 function updateExtraPanel(container: HTMLElement | Document) {
   const lastTask = getLastTranslateTask();
   const panel = container.querySelector(
-    "translator-plugin-panel",
+    `${elementPrefix}-panel`,
   ) as TranslatorPanel;
   if (panel) {
     panel.item = Zotero.Items.get(lastTask?.itemId || -1);
@@ -280,17 +288,88 @@ function updateExtraPanel(container: HTMLElement | Document) {
 
 function onDestroy(options: any) {
   const { body } = options;
+  heightObservers.get(body)?.destroy();
+  heightObservers.delete(body);
   const paneUID = body.dataset.paneUid;
   delete addon.data.panel.activePanels[paneUID];
 }
 
-function onUpdateHeight({ body }: { body: HTMLElement }) {
-  const details = body.closest("item-details");
-  const head = body.closest("item-pane-custom-section")?.querySelector(".head");
-  const heightKey = "--details-height";
+function observePanelHeight(body: HTMLElement) {
+  if (heightObservers.has(body)) return;
+  const viewport = body.closest<HTMLElement>("#zotero-view-item");
+  const section = body.closest<HTMLElement>("collapsible-section");
+  const head = section?.querySelector<HTMLElement>(":scope > .head");
+  const win = body.ownerDocument.defaultView as
+    | (Window & typeof globalThis)
+    | null;
+  if (!viewport || !head || !win) return;
 
-  body?.style.setProperty(
-    heightKey,
-    `${details!.querySelector(".zotero-view-item")!.clientHeight - head!.clientHeight - 8}px`,
+  let frame: number | null = null;
+  const schedule = () => {
+    if (frame !== null) return;
+    frame = win.requestAnimationFrame(() => {
+      frame = null;
+      onUpdateHeight({ body });
+    });
+  };
+  // Watch inputs, not the body whose height we write. This also catches a
+  // previously hidden reader/sidebar becoming visible and header wrapping.
+  const observer = new win.ResizeObserver(schedule);
+  observer.observe(viewport);
+  observer.observe(head);
+  heightObservers.set(body, {
+    schedule,
+    destroy: () => {
+      observer.disconnect();
+      if (frame !== null) win.cancelAnimationFrame(frame);
+    },
+  });
+  schedule();
+}
+
+function onUpdateHeight({ body }: { body: HTMLElement }) {
+  // ItemDetails puts its sections directly inside this scroll viewport. A
+  // descendant query on item-details can instead find a nested plugin pane.
+  const viewport = body.closest<HTMLElement>("#zotero-view-item");
+  const section = body.closest<HTMLElement>("collapsible-section");
+  const head = section?.querySelector<HTMLElement>(":scope > .head");
+  const panel = body.querySelector<HTMLElement>(`${elementPrefix}-panel`);
+  const win = body.ownerDocument.defaultView;
+  if (!viewport || !section || !head || !panel || !win || !body.isConnected)
+    return;
+  if (
+    !section.hasAttribute("open") ||
+    !viewport.clientHeight ||
+    !head.clientHeight
+  )
+    return;
+
+  const viewportStyle = win.getComputedStyle(viewport);
+  const sectionStyle = win.getComputedStyle(section);
+  const bodyStyle = win.getComputedStyle(body);
+  if (!viewportStyle || !sectionStyle || !bodyStyle) return;
+  const pixels = (value: string) => parseFloat(value) || 0;
+  const verticalSpace = (style: CSSStyleDeclaration) =>
+    pixels(style.paddingTop) +
+    pixels(style.paddingBottom) +
+    pixels(style.borderTopWidth) +
+    pixels(style.borderBottomWidth);
+  const height = Math.floor(
+    viewport.clientHeight -
+      pixels(viewportStyle.paddingTop) -
+      pixels(viewportStyle.paddingBottom) -
+      head.getBoundingClientRect().height -
+      verticalSpace(sectionStyle) -
+      pixels(sectionStyle.rowGap) -
+      verticalSpace(bodyStyle) -
+      pixels(bodyStyle.marginTop) -
+      pixels(bodyStyle.marginBottom),
   );
+  // Hidden initialization must not replace the last usable viewport size.
+  if (height <= 0) return;
+  const heightKey = `--${config.addonRef}-reader-height`;
+  const value = `${height}px`;
+  if (panel.style.getPropertyValue(heightKey) !== value) {
+    panel.style.setProperty(heightKey, value);
+  }
 }
